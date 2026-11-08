@@ -34,7 +34,9 @@ Synthetic trade / client / account / instrument sources
 | Parquet conversion and S3 stage access | Completed | Five files from batch `2026-11-03` listed and schema inferred |
 | Parquet file-level count | Completed | 79 + 79 + 78 + 78 + 78 = **392 rows** |
 | Iceberg external volume / S3 IAM trust | Completed | External-volume verification passed read/write/list/delete |
-| Iceberg Bronze table / historical backfill | Planned | Not created yet |
+| Iceberg Bronze table / schema | Completed | Table exists; all 17 columns and `INGESTED_AT TIMESTAMP_LTZ(6)` inspected |
+| Iceberg vs RAW ID-set comparison | Completed | 0 missing distinct `EVENT_ID`s, 0 extra distinct `EVENT_ID`s |
+| Iceberg historical row-count parity | **Awaiting verification** | Expected 1,704 vs 1,704; count output not yet provided |
 | Snowpipe / Streams / Tasks / CDC MERGE | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files are staged but **have not been loaded** to Bronze/RAW as part of the confirmed milestones. We will not double-ingest the earlier historical CSV batches after converting them to Parquet.
@@ -48,7 +50,12 @@ Synthetic trade / client / account / instrument sources
 - [`docs/progress.md`](docs/progress.md) — dated milestone evidence and next actions
 - [`sql/ingestion/01_parquet_stage_inspection.sql`](sql/ingestion/01_parquet_stage_inspection.sql) — file format, schema inference, row-count and sample queries
 - [`sql/quality/01_trade_reconciliation.sql`](sql/quality/01_trade_reconciliation.sql) — RAW-to-dbt reconciliation and targeted reject investigation
-- [`dbt/`](dbt/) — captured dbt source definition, client staging model, and data tests (a partial snapshot; not yet a complete standalone dbt project)
+- [`dbt/models/staging/stg_trade_events.sql`](dbt/models/staging/stg_trade_events.sql) — reconstructed trade staging view with client-aware quality validation
+- [`dbt/models/intermediate/`](dbt/models/intermediate/) — validated and rejected trade views, generic schema tests
+- [`dbt/tests/assert_trade_reconciliation.sql`](dbt/tests/assert_trade_reconciliation.sql) — dbt singular row-conservation test
+- [`dbt/dbt_project.yml`](dbt/dbt_project.yml) — reproducible starter config, not a live workspace export
+- [`sql/quality/02_trade_dq_diagnostics.sql`](sql/quality/02_trade_dq_diagnostics.sql) — reason-level DQ and orphan-client investigations
+- [`dbt/README.md`](dbt/README.md) — model lineage, run instructions and code provenance
 
 ## Key design decisions
 
@@ -65,7 +72,7 @@ The SQL queries in this repository assume lab objects such as `IB_LAB.RAW.IB_S3_
 
 Run `sql/ingestion/01_parquet_stage_inspection.sql` to inspect the five staged November 3 Parquet files, then run `sql/quality/01_trade_reconciliation.sql` for the previously ingested batches.
 
-This repository is being built **incrementally**, with verified milestones labeled separately from planned work.
+This repository is being built **incrementally**, with verified milestones labeled separately from planned work. **Trade dbt SQL files were reconstructed from the successful Snowflake Workspaces lab, not exported byte-for-byte; their execution from this checkout has not yet been independently reverified.**
 
 ---
 **Portfolio disclosure:** all examples and source records are synthetic, for educational and demonstration use.
