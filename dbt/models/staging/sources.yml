@@ -1,0 +1,13 @@
+# This folder captures known-good examples from the Snowflake-native dbt workspace.
+# It is intentionally a PARTIAL snapshot: no profiles.yml or credentials are committed.
+# Reconcile with your exact Snowflake Workspace models before attempting standalone dbt run.
+# Source definition as used in the original native RAW-based verification:
+version: 2
+
+sources:
+  - name: ib_raw
+    database: IB_LAB
+    schema: RAW
+    tables:
+      - name: RAW_TRADE_EVENTS
+      - name: RAW_CLIENTS
