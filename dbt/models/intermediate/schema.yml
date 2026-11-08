@@ -1,0 +1,25 @@
+version: 2
+
+# Compatible with the user's current Snowflake-native dbt test runner.
+# Note: arguments are directly nested beneath the generic test, not in 'arguments:'.
+
+models:
+  - name: int_valid_trades
+    columns:
+      - name: EVENT_ID
+        data_tests:
+          - not_null
+          - unique
+      - name: TRADE_ID
+        data_tests:
+          - not_null
+      - name: EVENT_TYPE
+        data_tests:
+          - accepted_values:
+              values: ['I', 'U', 'D']
+      - name: CLIENT_ID
+        data_tests:
+          - not_null
+          - relationships:
+              to: ref('stg_clients')
+              field: CLIENT_ID
