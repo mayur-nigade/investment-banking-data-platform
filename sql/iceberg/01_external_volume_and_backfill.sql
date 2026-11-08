@@ -1,6 +1,8 @@
--- PLAN: DO NOT RUN BEFORE AWS POLICY/ROLE ARE CREATED.
--- Substitute AWS account ID. Run each step in order.
--- This script is not verified in the lab yet. Original native RAW must remain untouched.
+-- Snowflake-managed Iceberg Bronze: historical backfill runbook.
+-- STATUS 2026-11-08: external volume VERIFIED; first Iceberg CTAS FAILED at
+-- compilation because RAW.INGESTED_AT is TIMESTAMP_LTZ(9), unsupported by
+-- Iceberg v2. Corrected CTAS below is PLANNED / not yet executed.
+-- Original native RAW remains untouched; do not rerun a successful CTAS.
 
 USE ROLE ACCOUNTADMIN;
 
@@ -34,6 +36,7 @@ CREATE SCHEMA IF NOT EXISTS IB_LAB.BRONZE;
 -- BEFORE running this CREATE, run:
 -- SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;
 -- If an existing table is listed, STOP and inspect its row count.
+-- After a failed CTAS, run SHOW before retrying; never CREATE OR REPLACE here.
 -- IMPORTANT: Iceberg CTAS syntax does NOT allow IF NOT EXISTS.
 -- Inspect first and run CTAS ONLY ONCE. If the table exists, do NOT rerun CTAS.
 CREATE ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
@@ -41,8 +44,15 @@ CREATE ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
     EXTERNAL_VOLUME = 'OMERA_IB_ICEBERG_VOL'
     BASE_LOCATION = 'trade_events'
 AS
-SELECT *
+SELECT
+    * REPLACE (
+        CAST(INGESTED_AT AS TIMESTAMP_LTZ(6)) AS INGESTED_AT
+    )
 FROM IB_LAB.RAW.RAW_TRADE_EVENTS;
+-- Iceberg v2 timestamps are microseconds (scale 6). Native Snowflake RAW
+-- allows nanoseconds (scale 9). SELECT * REPLACE changes only this projected
+-- column; the RAW table is not updated. CTAS physically creates new Parquet
+-- and Iceberg metadata files, NOT a view or live link to RAW.
 
 -- Inspect table type and physical table file location.
 SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;
