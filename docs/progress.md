@@ -88,3 +88,32 @@ DESC ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG;
 ```
 
 **Expected:** 1704 in both if the one-time backfill succeeded; `INGESTED_AT` at timestamp scale 6 for Iceberg v2. **Do not rerun CTAS or drop existing table.** If 0 records, plan an explicit backfill with duplicate protection; if count diverges, investigate before writing.
+
+## 2026-11-08 — Iceberg schema inspected: timestamp precision fixed
+
+**User-verified `DESC ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG` output:** 17 expected columns exist: the 14 source fields (`EVENT_ID`, `TRADE_ID`, `EVENT_TYPE`, `SOURCE_SEQUENCE`, `CLIENT_ID`, `ACCOUNT_ID`, `INSTRUMENT_ID`, `SIDE`, `QUANTITY`, `PRICE`, `TRADE_CURRENCY`, `TRADE_DATE`, `EVENT_TS`, `SOURCE_SYSTEM`) plus `SOURCE_FILE` (`VARCHAR`), `FILE_ROW_NUMBER` (`NUMBER(38,0)`), `INGESTED_AT` (`TIMESTAMP_LTZ(6)`). The prior `TIMESTAMP_LTZ(9)` incompatibility is therefore resolved in the **created table's schema**.
+
+**Still NOT verified:** Whether historical data was copied at all, count parity (target 1704 on both native RAW/Iceberg), event-ID parity, and actual physical Iceberg files/snapshots. Do not mark the backfill or end-to-end Iceberg ingestion complete until these checks pass.
+
+**Next read-only SQL:**
+```sql
+SELECT 'NATIVE_RAW' AS LAYER, COUNT(*) AS RECORDS
+FROM IB_LAB.RAW.RAW_TRADE_EVENTS
+UNION ALL
+SELECT 'ICEBERG_BRONZE', COUNT(*)
+FROM IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG;
+
+SELECT
+  (SELECT COUNT(*) FROM (
+    SELECT EVENT_ID FROM IB_LAB.RAW.RAW_TRADE_EVENTS
+    MINUS
+    SELECT EVENT_ID FROM IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
+  )) AS MISSING_IN_ICEBERG,
+  (SELECT COUNT(*) FROM (
+    SELECT EVENT_ID FROM IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
+    MINUS
+    SELECT EVENT_ID FROM IB_LAB.RAW.RAW_TRADE_EVENTS
+  )) AS EXTRA_IN_ICEBERG;
+```
+
+**Interpretation:** Expected 1704 vs 1704 and 0 missing/extra IDs. Set difference compares distinct IDs; it does not prove row-by-row content equality.
