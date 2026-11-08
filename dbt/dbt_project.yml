@@ -1,0 +1,21 @@
+# Reproducible dbt Core project configuration for the synthetic trade lab.
+# The authoritative project is hosted in Snowflake Workspaces. This is a
+# reconstructed portfolio configuration; verify the live project settings.
+name: 'ib_trade_dbt'
+version: '1.0.0'
+config-version: 2
+profile: 'ib_trade_dbt'
+
+model-paths: ['models']
+test-paths: ['tests']
+macro-paths: ['macros']
+seed-paths: ['seeds']
+analysis-paths: ['analyses']
+snapshot-paths: ['snapshots']
+
+models:
+  ib_trade_dbt:
+    staging:
+      +materialized: view
+    intermediate:
+      +materialized: view
