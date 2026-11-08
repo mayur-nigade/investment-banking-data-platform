@@ -1,0 +1,15 @@
+{{ config(materialized='view') }}
+
+-- Client master staging; strings are preserved and ONBOARD_DATE is safely parsed.
+SELECT
+    NULLIF(TRIM(CLIENT_ID), '') AS CLIENT_ID,
+    NULLIF(TRIM(CLIENT_NAME), '') AS CLIENT_NAME,
+    NULLIF(TRIM(CLIENT_TYPE), '') AS CLIENT_TYPE,
+    NULLIF(TRIM(DOMICILE_COUNTRY), '') AS DOMICILE_COUNTRY,
+    NULLIF(TRIM(RISK_RATING), '') AS RISK_RATING,
+    UPPER(NULLIF(TRIM(KYC_STATUS), '')) AS KYC_STATUS,
+    TRY_TO_DATE(ONBOARD_DATE, 'YYYY-MM-DD') AS ONBOARD_DATE,
+    SOURCE_FILE,
+    FILE_ROW_NUMBER,
+    INGESTED_AT
+FROM {{ source('ib_raw', 'RAW_CLIENTS') }}
