@@ -17,7 +17,7 @@
 4. Run `DESC EXTERNAL VOLUME` and copy the exact `STORAGE_AWS_IAM_USER_ARN` and `STORAGE_AWS_EXTERNAL_ID`.
 5. Replace the role trust relationship using [trust template](../aws/iam/iceberg_role_trust.template.json), replacing the principal with the ARN returned by Snowflake. Preserve matching external ID.
 6. Run `SELECT SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL');`. Verify `success=true` with successful write/read/list/delete.
-7. Create the `BRONZE` schema and the Iceberg table with `CREATE ICEBERG TABLE IF NOT EXISTS ... AS SELECT * FROM IB_LAB.RAW.RAW_TRADE_EVENTS`. This is a one-time backfill of the 1,704 events already loaded from CSV.
+7. Create the `BRONZE` schema; first run `SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;`. If no table exists, run the Iceberg CTAS once with `CREATE ICEBERG TABLE ... AS SELECT * FROM IB_LAB.RAW.RAW_TRADE_EVENTS`. Iceberg CTAS does NOT accept `IF NOT EXISTS`. This is a one-time backfill of the 1,704 events already loaded from CSV.
 8. Verify row counts and check both directions of `EVENT_ID` set difference. Then inspect S3 `iceberg/bronze/trade_events/` for Iceberg-managed Parquet + metadata files.
 9. **Stop:** Do not ingest November 3 Parquet files until the historical backfill is checked. That new batch contains 392 staged events.
 
@@ -39,7 +39,7 @@
 
 If the S3 bucket uses an SSE-KMS customer-managed key, also grant the IAM role and KMS key policy necessary `kms:Encrypt`, `kms:Decrypt`, `kms:GenerateDataKey`, `kms:DescribeKey` (scoped to that key). Evaluate Snowflake external-volume `ENCRYPTION` options for your encryption requirements.
 
-**Operational safety:** Never run `CREATE OR REPLACE EXTERNAL VOLUME` or `CREATE OR REPLACE ICEBERG TABLE` on established resources just to retry; first inspect the existing object and preserve files. Creating an existing table `IF NOT EXISTS` won't backfill it. Keep table files exclusively managed through Iceberg-aware operations.
+**Operational safety:** Never run `CREATE OR REPLACE EXTERNAL VOLUME` or `CREATE OR REPLACE ICEBERG TABLE` on established resources just to retry; first inspect the existing object and preserve files. Do not rerun Iceberg CTAS if a table already exists: inspect row counts and use a planned, idempotent backfill strategy rather than replacing or duplicating records. Keep table files exclusively managed through Iceberg-aware operations.
 
 ## References
 
