@@ -1,0 +1,35 @@
+# Local/secrets
+.env
+.env.*
+!.env.example
+*.pem
+*.p12
+*.pfx
+*.key
+credentials.json
+secrets.json
+
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+
+# dbt / build outputs
+target/
+dbt_packages/
+logs/
+profiles.yml
+
+# Generated datasets and large binaries: use controlled S3 landing, not public GitHub
+data/raw/
+data/generated/
+*.parquet
+*.csv
+
+# OS/editor
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
