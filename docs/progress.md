@@ -60,3 +60,13 @@ See [Iceberg troubleshooting runbook](iceberg_aws_setup.md#troubleshooting-sts-a
 **What this proves:** Cross-account Snowflake → AWS STS role assumption and data-file operations within `s3://omera-ib-trade-lake/iceberg/bronze/` succeeded. The earlier `sts:AssumeRole` blocker is resolved. It does **not** prove the Iceberg table exists or contains rows.
 
 **Next:** Run `SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;`. If absent, create one Snowflake-managed Iceberg CTAS from `IB_LAB.RAW.RAW_TRADE_EVENTS`. Verify `NATIVE_RAW=1704` and `ICEBERG_BRONZE=1704` and no missing/extra EVENT_IDs. Do not replay the 392 November 3 events yet.
+
+## 2026-11-08 — First Iceberg CTAS compilation failed (timestamp precision)
+
+**Verified user error:** `SQL Compilation error: Invalid time type scale specified for column 'INGESTED_AT' with data type 'TIMESTAMP_LTZ(9)'`. Attempted `CREATE ICEBERG TABLE ... AS SELECT * FROM IB_LAB.RAW.RAW_TRADE_EVENTS` after external-volume verification passed.
+
+**Diagnosis:** Iceberg v2 uses microsecond timestamps (`TIMESTAMP_LTZ(6)`), whereas native RAW `INGESTED_AT` is `TIMESTAMP_LTZ(9)`. The failure was in DDL compilation, not IAM or row validation.
+
+**Code fix committed (not yet executed):** Use `SELECT * REPLACE (CAST(INGESTED_AT AS TIMESTAMP_LTZ(6)) AS INGESTED_AT)` within the one-time Iceberg CTAS. See [SQL runbook](../sql/iceberg/01_external_volume_and_backfill.sql). This does not modify RAW.
+
+**Status:** Iceberg table/backfill not confirmed. Check `SHOW ICEBERG TABLES` before retry, never assume partial creation or use `OR REPLACE` without examination. After successful retry, compare native RAW and Iceberg row counts and event IDs.
