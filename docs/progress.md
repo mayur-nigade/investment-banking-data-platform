@@ -42,3 +42,13 @@ Do not label these future items `COMPLETE` until their outputs have been shared 
 - Actual Snowflake run outputs and user-confirmed metrics are documented as **verified**.
 - SQL from prior guidance is labeled as **captured lab code** unless its execution is confirmed.
 - Avoid inventing throughput, latency, cost savings, production volumes or employer implementation details.
+
+## 2026-11-08 — Iceberg external volume IAM trust blocked
+
+**Observed:** The first `SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL')` response returned `success=false`. Storage-location selection and AWS role ARN validation passed. Every data operation failed **before reaching S3** with AWS STS `AssumeRole` denied.
+
+**Root-cause area:** The AWS IAM role trust relationship must permit the exact Snowflake-owned `STORAGE_AWS_IAM_USER_ARN` principal **and** `sts:ExternalId` from `DESC EXTERNAL VOLUME`. AWS accounts for Snowflake's principal and the bucket role differ legitimately.
+
+**Next action:** Apply the corrected trust policy using the verified Snowflake IAM principal and external ID; rerun external volume verification. Current status **FAILED / fix pending**, not a completed Iceberg table.
+
+See [Iceberg troubleshooting runbook](iceberg_aws_setup.md#troubleshooting-sts-assumerole-denied-observed-2026-11-08). Do not publish real AWS principal/account IDs in this public repository.
