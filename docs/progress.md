@@ -52,3 +52,11 @@ Do not label these future items `COMPLETE` until their outputs have been shared 
 **Next action:** Apply the corrected trust policy using the verified Snowflake IAM principal and external ID; rerun external volume verification. Current status **FAILED / fix pending**, not a completed Iceberg table.
 
 See [Iceberg troubleshooting runbook](iceberg_aws_setup.md#troubleshooting-sts-assumerole-denied-observed-2026-11-08). Do not publish real AWS principal/account IDs in this public repository.
+
+## 2026-11-08 — Iceberg external volume IAM fixed and verified
+
+**Verified from user-provided Snowflake output:** `SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL')` now reports `success=true`. Storage location, AWS role ARN validation, and the **write, read, list and delete** checks all returned `PASSED`. Snowflake IAM role assumption now works after the trust-relationship correction.
+
+**What this proves:** Cross-account Snowflake → AWS STS role assumption and data-file operations within `s3://omera-ib-trade-lake/iceberg/bronze/` succeeded. The earlier `sts:AssumeRole` blocker is resolved. It does **not** prove the Iceberg table exists or contains rows.
+
+**Next:** Run `SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;`. If absent, create one Snowflake-managed Iceberg CTAS from `IB_LAB.RAW.RAW_TRADE_EVENTS`. Verify `NATIVE_RAW=1704` and `ICEBERG_BRONZE=1704` and no missing/extra EVENT_IDs. Do not replay the 392 November 3 events yet.
