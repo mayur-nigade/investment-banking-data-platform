@@ -117,3 +117,19 @@ SELECT
 ```
 
 **Interpretation:** Expected 1704 vs 1704 and 0 missing/extra IDs. Set difference compares distinct IDs; it does not prove row-by-row content equality.
+
+## 2026-11-08 — Distinct event-ID reconciliation PASSED
+
+**User-provided output:** the two-direction `MINUS` checks returned `MISSING_IN_ICEBERG=0` and `EXTRA_IN_ICEBERG=0`.
+
+This verifies **distinct event-ID sets only**. The source-versus-Iceberg **COUNT(*) output has not been provided**, so row-count parity and full row-content equivalence remain unverified.
+
+## 2026-11-08 — Trade dbt code documentation gap addressed
+
+The repository initially included client staging, dbt test YAML and a singular test, but did **not** contain the full `stg_trade_events.sql` model. Earlier intermediate valid/rejected views were placeholders, including an incorrect `DQ_STATUS AS REJECTION_REASON` expression. This was corrected to `DQ_REASON AS REJECTION_REASON` and the explicit models were restored.
+
+**Committed:** `dbt/models/staging/stg_trade_events.sql`, corrected `dbt/models/intermediate/int_valid_trades.sql` and `int_rejected_trades.sql`, `dbt/dbt_project.yml`, `sql/quality/02_trade_dq_diagnostics.sql`, and updated docs. Generic tests are in `dbt/models/intermediate/schema.yml`; singular count test is `dbt/tests/assert_trade_reconciliation.sql`.
+
+**Provenance:** Recovered/reconstructed from our previous Snowflake-native Workspaces learning steps and actual test outcomes; **not** byte-for-byte exported workspace source, and not rerun from this repository. Before marking the GitHub checkout reproducible, reconcile model files with the live Workspace project and rerun all tests.
+
+**Previously observed (Snowflake Workspace):** after the second batch, staging 1704, valid 1697, rejected 7 (price 2; quantity, event type, trade date, event timestamp, missing trade ID 1 each). After client integrity validation the user confirmed stage 1704, valid 1696, rejected 8; selected dbt test run PASS=7/7. The orphan client `CL99999`, trade `BAD0002082`, was excluded from the valid view.
