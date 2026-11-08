@@ -70,3 +70,21 @@ See [Iceberg troubleshooting runbook](iceberg_aws_setup.md#troubleshooting-sts-a
 **Code fix committed (not yet executed):** Use `SELECT * REPLACE (CAST(INGESTED_AT AS TIMESTAMP_LTZ(6)) AS INGESTED_AT)` within the one-time Iceberg CTAS. See [SQL runbook](../sql/iceberg/01_external_volume_and_backfill.sql). This does not modify RAW.
 
 **Status:** Iceberg table/backfill not confirmed. Check `SHOW ICEBERG TABLES` before retry, never assume partial creation or use `OR REPLACE` without examination. After successful retry, compare native RAW and Iceberg row counts and event IDs.
+
+## 2026-11-08 — Iceberg table existence confirmed; backfill not yet verified
+
+**User reports** that `IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG` exists after the previously documented `INGESTED_AT TIMESTAMP_LTZ(9)` CTAS failure and proposed precision correction. This confirms table existence **only**, not successful data backfill or the actual schema; the exact statement used to create it has not been provided.
+
+**Next read-only checks:**
+
+```sql
+SELECT 'NATIVE_RAW' AS LAYER, COUNT(*) AS RECORDS
+FROM IB_LAB.RAW.RAW_TRADE_EVENTS
+UNION ALL
+SELECT 'ICEBERG_BRONZE', COUNT(*)
+FROM IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG;
+
+DESC ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG;
+```
+
+**Expected:** 1704 in both if the one-time backfill succeeded; `INGESTED_AT` at timestamp scale 6 for Iceberg v2. **Do not rerun CTAS or drop existing table.** If 0 records, plan an explicit backfill with duplicate protection; if count diverges, investigate before writing.
