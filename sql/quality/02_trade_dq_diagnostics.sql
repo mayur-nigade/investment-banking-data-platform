@@ -1,0 +1,51 @@
+-- Reusable trade-event DQ diagnostics against the dbt views.
+-- Valid for the native RAW dbt baseline. This is read-only SQL.
+-- Previously verified after CSV batch 2026-11-02: 1704 staging, 1697 valid,
+-- 7 rejected; after client FK enforcement: 1696 valid, 8 rejected.
+
+-- 1) Count records by layer.
+SELECT 'STAGING' AS LAYER, COUNT(*) AS RECORDS
+FROM IB_LAB.DBT_DEV.STG_TRADE_EVENTS
+UNION ALL
+SELECT 'VALID', COUNT(*)
+FROM IB_LAB.DBT_DEV.INT_VALID_TRADES
+UNION ALL
+SELECT 'REJECTED', COUNT(*)
+FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES;
+
+-- 2) DQ classification status.
+SELECT DQ_STATUS, COUNT(*) AS RECORD_COUNT
+FROM IB_LAB.DBT_DEV.STG_TRADE_EVENTS
+GROUP BY DQ_STATUS
+ORDER BY DQ_STATUS;
+
+-- 3) Specific rejection reasons (NOT the generic DQ_STATUS).
+SELECT REJECTION_REASON, COUNT(*) AS REJECTED_COUNT
+FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
+GROUP BY REJECTION_REASON
+ORDER BY REJECTED_COUNT DESC, REJECTION_REASON;
+
+-- Observed in second batch before client reference check:
+-- INVALID_PRICE=2; INVALID_EVENT_TYPE=1; INVALID_QUANTITY=1;
+-- INVALID_TRADE_DATE=1; INVALID_EVENT_TS=1; MISSING_TRADE_ID=1.
+-- Following client-reference DQ fix, the orphaned CLIENT_ID=CL99999
+-- (TRADE_ID=BAD0002082) was excluded from valid trades.
+
+-- 4) Locate unknown clients reaching the valid view; should be empty.
+SELECT
+    t.CLIENT_ID,
+    COUNT(*) AS AFFECTED_TRADE_EVENTS,
+    MIN(t.TRADE_ID) AS EXAMPLE_TRADE_ID
+FROM IB_LAB.DBT_DEV.INT_VALID_TRADES AS t
+LEFT JOIN IB_LAB.DBT_DEV.STG_CLIENTS AS c
+    ON t.CLIENT_ID = c.CLIENT_ID
+WHERE t.CLIENT_ID IS NOT NULL
+  AND c.CLIENT_ID IS NULL
+GROUP BY t.CLIENT_ID
+ORDER BY AFFECTED_TRADE_EVENTS DESC;
+
+-- 5) Explain rejected orphan-client event.
+SELECT EVENT_ID, TRADE_ID, CLIENT_ID, REJECTION_REASON, SOURCE_FILE,
+       FILE_ROW_NUMBER
+FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
+WHERE TRADE_ID = 'BAD0002082';
