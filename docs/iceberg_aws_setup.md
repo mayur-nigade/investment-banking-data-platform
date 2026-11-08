@@ -58,3 +58,22 @@ If the S3 bucket uses an SSE-KMS customer-managed key, also grant the IAM role a
 - Native RAW 1704 = Iceberg Bronze 1704 [ ]
 - No missing/extra `EVENT_ID` values [ ]
 - Iceberg S3 location contains new data/metadata [ ]
+
+
+## Troubleshooting: STS AssumeRole denied (observed 2026-11-08)
+
+**Observed (before fix):** `SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL')` returned `success=false`; `storageLocationSelectionResult=PASSED`, `awsRoleArnValidationResult=PASSED`, while `writeResult`, `readResult`, `listResult`, `deleteResult` all failed with `Error assuming AWS_ROLE: ... is not authorized to perform sts:AssumeRole`.
+
+**Diagnosis:** Snowflake cannot assume the AWS IAM role through STS. This is a *trust relationship / external ID* problem, not proof of missing S3 permissions, KMS permissions, or bad Iceberg table SQL; those checks have not yet run.
+
+**Fix (AWS Console):**
+
+1. Open **IAM → Roles → OMERA_SNOWFLAKE_ICEBERG_ROLE → Trust relationships → Edit trust policy** in the account that owns the role.
+2. Run `DESC EXTERNAL VOLUME OMERA_IB_ICEBERG_VOL;` in Snowflake and copy the exact `STORAGE_AWS_IAM_USER_ARN` and `STORAGE_AWS_EXTERNAL_ID`.
+3. Paste the principal and external ID into [iceberg_role_trust.template.json](../aws/iam/iceberg_role_trust.template.json). **Only the Snowflake IAM user ARN** belongs in `Principal.AWS`; the local IAM role ARN is the role you are editing, not the Principal. Both AWS account IDs can differ.
+4. Save the trust policy, then retry `SELECT SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL');`.
+5. If STS succeeds but one S3 operation then fails, investigate the separate S3/IAM/KMS permission layer. Do not create the Iceberg table until verification success is true.
+
+**State:** Fix provided; outcome **NOT YET VERIFIED**. Public GitHub templates intentionally omit tenant-specific AWS account IDs and identifiers.
+
+Official: https://docs.snowflake.com/en/user-guide/tables-iceberg-configure-external-volume-s3
