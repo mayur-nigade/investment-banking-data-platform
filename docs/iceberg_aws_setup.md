@@ -74,6 +74,34 @@ If the S3 bucket uses an SSE-KMS customer-managed key, also grant the IAM role a
 4. Save the trust policy, then retry `SELECT SYSTEM$VERIFY_EXTERNAL_VOLUME('OMERA_IB_ICEBERG_VOL');`.
 5. If STS succeeds but one S3 operation then fails, investigate the separate S3/IAM/KMS permission layer. Do not create the Iceberg table until verification success is true.
 
-**State:** Fix provided; outcome **NOT YET VERIFIED**. Public GitHub templates intentionally omit tenant-specific AWS account IDs and identifiers.
+**State:** IAM trust **fixed and verified**. External-volume verification later returned success=true and write/read/list/delete PASSED. Public GitHub templates intentionally omit tenant-specific AWS account IDs and identifiers.
 
 Official: https://docs.snowflake.com/en/user-guide/tables-iceberg-configure-external-volume-s3
+
+## Troubleshooting: `INGESTED_AT TIMESTAMP_LTZ(9)` unsupported by Iceberg v2 CTAS (observed 2026-11-08)
+
+**Observed:** The first `CREATE ICEBERG TABLE ... AS SELECT * FROM IB_LAB.RAW.RAW_TRADE_EVENTS` failed at **SQL compilation** with `Invalid time type scale specified for column 'INGESTED_AT' with data type 'TIMESTAMP_LTZ(9)'`. External volume verification had already passed. **No successfully created Iceberg table has yet been confirmed.**
+
+**Root cause:** Native Snowflake defaults many timestamp columns to nanosecond precision (`TIMESTAMP_LTZ(9)`), whereas Iceberg **v2** represents time/timestamps with microsecond precision (`TIMESTAMP_LTZ(6)` / `TIMESTAMP_NTZ(6)`). Iceberg **v3** can use nanosecond timestamp types but that's not our current interoperability-focused lab target.
+
+**Remediation (NOT YET VERIFIED):** Check `SHOW ICEBERG TABLES ...` first. If absent, use the corrected SQL in [01_external_volume_and_backfill.sql](../sql/iceberg/01_external_volume_and_backfill.sql):
+
+```sql
+CREATE ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
+    CATALOG = 'SNOWFLAKE'
+    EXTERNAL_VOLUME = 'OMERA_IB_ICEBERG_VOL'
+    BASE_LOCATION = 'trade_events'
+AS
+SELECT * REPLACE (
+    CAST(INGESTED_AT AS TIMESTAMP_LTZ(6)) AS INGESTED_AT
+)
+FROM IB_LAB.RAW.RAW_TRADE_EVENTS;
+```
+
+**Mechanism:** `SELECT * REPLACE` keeps the 14+ source fields and position unchanged but casts the projected ingest timestamp from 9 to 6 fractional digits. The native RAW table is **not** updated. CTAS materializes a distinct physical Iceberg table, writing new Parquet data + Iceberg manifests/metadata to the dedicated S3 external volume. It is **not a view**, and future native RAW changes do not propagate automatically.
+
+**Verify:** `SHOW ICEBERG TABLES`, `DESC ICEBERG TABLE`, comparison of native RAW vs Iceberg counts (expected 1704 vs 1704), and both-way `EVENT_ID` differences (expected no rows). `SELECT * REPLACE` has been documented but the corrected CTAS awaits user execution.
+
+**Storage nuance:** Snowflake may generate `trade_events.<randomId>/data/` and `.../metadata/` under the volume root when `BASE_LOCATION='trade_events'`; the exact physical folder need not be exactly `trade_events/`.
+
+Official sources: https://docs.snowflake.com/en/user-guide/tables-iceberg-data-types ; https://docs.snowflake.com/en/sql-reference/sql/create-iceberg-table-snowflake ; https://docs.snowflake.com/en/sql-reference/sql/select ; https://docs.snowflake.com/en/user-guide/tables-iceberg-managing-external-volumes
