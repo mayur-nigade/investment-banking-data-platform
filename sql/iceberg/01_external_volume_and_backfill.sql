@@ -31,8 +31,12 @@ USE WAREHOUSE COMPUTE_WH;
 CREATE SCHEMA IF NOT EXISTS IB_LAB.BRONZE;
 
 -- CTAS is a ONE-TIME historical backfill from our already-ingested 1704 RAW events.
--- IF NOT EXISTS protects an existing table, but does NOT fill an empty existing table.
-CREATE ICEBERG TABLE IF NOT EXISTS IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
+-- BEFORE running this CREATE, run:
+-- SHOW ICEBERG TABLES LIKE 'RAW_TRADE_EVENTS_ICEBERG' IN SCHEMA IB_LAB.BRONZE;
+-- If an existing table is listed, STOP and inspect its row count.
+-- IMPORTANT: Iceberg CTAS syntax does NOT allow IF NOT EXISTS.
+-- Inspect first and run CTAS ONLY ONCE. If the table exists, do NOT rerun CTAS.
+CREATE ICEBERG TABLE IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG
     CATALOG = 'SNOWFLAKE'
     EXTERNAL_VOLUME = 'OMERA_IB_ICEBERG_VOL'
     BASE_LOCATION = 'trade_events'
