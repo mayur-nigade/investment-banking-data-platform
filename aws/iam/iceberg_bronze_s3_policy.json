@@ -1,0 +1,41 @@
+{
+  "Version": "2012-10-17",
+  "Statement": [
+    {
+      "Sid": "IcebergBronzeObjectAccess",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetObject",
+        "s3:GetObjectVersion",
+        "s3:PutObject",
+        "s3:DeleteObject",
+        "s3:DeleteObjectVersion"
+      ],
+      "Resource": "arn:aws:s3:::omera-ib-trade-lake/iceberg/bronze/*"
+    },
+    {
+      "Sid": "IcebergBronzeListOnly",
+      "Effect": "Allow",
+      "Action": [
+        "s3:ListBucket"
+      ],
+      "Resource": "arn:aws:s3:::omera-ib-trade-lake",
+      "Condition": {
+        "StringLike": {
+          "s3:prefix": [
+            "iceberg/bronze",
+            "iceberg/bronze/*"
+          ]
+        }
+      }
+    },
+    {
+      "Sid": "IcebergBronzeGetBucketLocation",
+      "Effect": "Allow",
+      "Action": [
+        "s3:GetBucketLocation"
+      ],
+      "Resource": "arn:aws:s3:::omera-ib-trade-lake"
+    }
+  ]
+}
