@@ -33,7 +33,8 @@ Synthetic trade / client / account / instrument sources
 | dbt automated tests | Completed | 7 passed, 0 errors |
 | Parquet conversion and S3 stage access | Completed | Five files from batch `2026-11-03` listed and schema inferred |
 | Parquet file-level count | Completed | 79 + 79 + 78 + 78 + 78 = **392 rows** |
-| Iceberg Bronze external volume and table | Planned | Not created yet |
+| Iceberg external volume / S3 IAM trust | Completed | External-volume verification passed read/write/list/delete |
+| Iceberg Bronze table / historical backfill | Planned | Not created yet |
 | Snowpipe / Streams / Tasks / CDC MERGE | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files are staged but **have not been loaded** to Bronze/RAW as part of the confirmed milestones. We will not double-ingest the earlier historical CSV batches after converting them to Parquet.
