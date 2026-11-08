@@ -41,6 +41,9 @@ Synthetic trade / client / account / instrument sources
 ## Repository contents
 
 - [`docs/architecture.md`](docs/architecture.md) — proposed architecture, layers, and implementation constraints
+- [`docs/iceberg_aws_setup.md`](docs/iceberg_aws_setup.md) — complete AWS IAM + Iceberg external-volume implementation runbook (planned)
+- [`sql/iceberg/01_external_volume_and_backfill.sql`](sql/iceberg/01_external_volume_and_backfill.sql) — create and verify Snowflake-managed Iceberg Bronze (planned)
+- [`docs/query_library.md`](docs/query_library.md) — cross-reference to the new Notion SQL query library
 - [`docs/progress.md`](docs/progress.md) — dated milestone evidence and next actions
 - [`sql/ingestion/01_parquet_stage_inspection.sql`](sql/ingestion/01_parquet_stage_inspection.sql) — file format, schema inference, row-count and sample queries
 - [`sql/quality/01_trade_reconciliation.sql`](sql/quality/01_trade_reconciliation.sql) — RAW-to-dbt reconciliation and targeted reject investigation
