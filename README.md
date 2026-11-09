@@ -36,7 +36,7 @@ Synthetic trade / client / account / instrument sources
 | Iceberg external volume / S3 IAM trust | Completed | External-volume verification passed read/write/list/delete |
 | Iceberg Bronze table / schema | Completed | Table exists; all 17 columns and `INGESTED_AT TIMESTAMP_LTZ(6)` inspected |
 | Iceberg vs RAW ID-set comparison | Completed | 0 missing distinct `EVENT_ID`s, 0 extra distinct `EVENT_ID`s |
-| Iceberg historical row-count parity | **Awaiting verification** | Expected 1,704 vs 1,704; count output not yet provided |
+| Iceberg historical row-count parity | Completed | 1,704 native RAW = 1,704 Iceberg Bronze; both-way distinct EVENT_ID delta = 0 |
 | Snowpipe / Streams / Tasks / CDC MERGE | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files are staged but **have not been loaded** to Bronze/RAW as part of the confirmed milestones. We will not double-ingest the earlier historical CSV batches after converting them to Parquet.
@@ -45,7 +45,8 @@ Synthetic trade / client / account / instrument sources
 
 - [`docs/architecture.md`](docs/architecture.md) — proposed architecture, layers, and implementation constraints
 - [`docs/iceberg_aws_setup.md`](docs/iceberg_aws_setup.md) — complete AWS IAM + Iceberg external-volume implementation runbook (planned)
-- [`sql/iceberg/01_external_volume_and_backfill.sql`](sql/iceberg/01_external_volume_and_backfill.sql) — create and verify Snowflake-managed Iceberg Bronze (planned)
+- [`sql/iceberg/01_external_volume_and_backfill.sql`](sql/iceberg/01_external_volume_and_backfill.sql) — verified historical CTAS pattern and reconciliation SQL
+- [`sql/iceberg/02_load_new_trade_parquet_batch.sql`](sql/iceberg/02_load_new_trade_parquet_batch.sql) — **next planned** load of 392 new Parquet events with source metadata
 - [`docs/query_library.md`](docs/query_library.md) — cross-reference to the new Notion SQL query library
 - [`docs/progress.md`](docs/progress.md) — dated milestone evidence and next actions
 - [`sql/ingestion/01_parquet_stage_inspection.sql`](sql/ingestion/01_parquet_stage_inspection.sql) — file format, schema inference, row-count and sample queries
