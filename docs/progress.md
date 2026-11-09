@@ -161,3 +161,15 @@ Historical Iceberg count was **1704** and historical ID parity had been verified
 **Next implementation (PLANNED, not executed):** Change dbt `stg_trade_events` input from `source('ib_raw','RAW_TRADE_EVENTS')` to `source('ib_iceberg','RAW_TRADE_EVENTS_ICEBERG')`, while preserving `RAW_CLIENTS` in native RAW. Add `ib_iceberg` in `sources.yml`; run `dbt build --select +stg_trade_events+` in Snowflake Workspaces once to rebuild the lineage and run tests. Github's reconstructed `stg_trade_events.sql` now reflects **the intended cutover**, not a verified production/workspace edit.
 
 **Next training in fast-track mode:** Snowpipe vs COPY, append-only Streams on Snowflake-managed Iceberg (note: creating a stream starts tracking *future* changes), Tasks and CDC MERGE / SCD2; no repeat of previous counts.
+
+## 2026-11-09 — CDC current-state bootstrap and triggered task prepared (PLANNED)
+
+**User confirmed:** Snowflake dbt source/event model updated and the append-only stream was created. Exact dbt build summary and stream definition output have not been pasted, so GitHub is still labeled accordingly.
+
+Two new scripts are versioned:
+- [03_bootstrap_current_trades.sql](../sql/cdc/03_bootstrap_current_trades.sql): create `IB_LAB.GOLD.CURRENT_TRADES` as one latest valid event per `TRADE_ID`, sorted by source sequence, event timestamp and event ID; keep `EVENT_TYPE='D'` as an `IS_DELETED=TRUE` tombstone.
+- [04_triggered_trade_cdc_task.sql](../sql/cdc/04_triggered_trade_cdc_task.sql): create a **triggered**, warehouse-managed task on `IB_LAB.BRONZE.TRADE_EVENTS_APPEND_STREAM`; parse and validate stream inserts, deduplicate to latest event per trade and MERGE newer trade states into Gold. After verifying bootstrap, `ALTER TASK ... RESUME`.
+
+**Important design assumptions:** incoming I/U/D events carry complete row images and `SOURCE_SEQUENCE` advances per `TRADE_ID`. Older sequence events cannot overwrite newer states. Invalid streamed events remain in raw Iceberg but are not separately persisted in an exception table by this learning slice; a production version must add a durable reject/audit flow and replay strategy. The task has NOT been created or resumed via connector in the user's Snowflake account.
+
+**Sequence:** Execute Gold bootstrap SQL once, then task create/resume. No new post-stream events have yet been confirmed for CDC processing.
