@@ -133,3 +133,15 @@ The repository initially included client staging, dbt test YAML and a singular t
 **Provenance:** Recovered/reconstructed from our previous Snowflake-native Workspaces learning steps and actual test outcomes; **not** byte-for-byte exported workspace source, and not rerun from this repository. Before marking the GitHub checkout reproducible, reconcile model files with the live Workspace project and rerun all tests.
 
 **Previously observed (Snowflake Workspace):** after the second batch, staging 1704, valid 1697, rejected 7 (price 2; quantity, event type, trade date, event timestamp, missing trade ID 1 each). After client integrity validation the user confirmed stage 1704, valid 1696, rejected 8; selected dbt test run PASS=7/7. The orphan client `CL99999`, trade `BAD0002082`, was excluded from the valid view.
+
+## 2026-11-09 — Historical Iceberg backfill reconciliation VERIFIED
+
+**User-confirmed live Snowflake results:**
+- `IB_LAB.RAW.RAW_TRADE_EVENTS` row count = **1,704**.
+- `IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG` row count = **1,704**.
+- `MISSING_IN_ICEBERG = 0` and `EXTRA_IN_ICEBERG = 0` from both-direction EVENT_ID `MINUS` checks.
+- The Iceberg table has the expected 17-column schema, including `INGESTED_AT TIMESTAMP_LTZ(6)`.
+
+**This establishes:** Historical native-RAW-to-Iceberg count parity and matching distinct `EVENT_ID` membership. It does **not** prove every non-key field has identical values or check duplicate IDs directly. The 392 new events staged in the five 2026-11-03 Parquet files are **not yet loaded** into Iceberg.
+
+**Next planned query:** [Parquet COPY INTO Iceberg Bronze](../sql/iceberg/02_load_new_trade_parquet_batch.sql). Uses `FULL_INGEST`, reads 14 lower-case Parquet fields by name, records source file/row/timestamp metadata, preserves original files (`PURGE=FALSE`), and never forces a replay. **Expected count after one successful load: 2,096; unverified.**
