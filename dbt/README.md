@@ -6,7 +6,7 @@ Verified Snowflake result: 1,704 trade events staged; 1,696 valid; 8 rejected; 7
 
 `models/staging/stg_trade_events.sql`, `models/intermediate/int_valid_trades.sql` and `int_rejected_trades.sql` are **reconstructions** based on the confirmed behavior and will be compared with the real files when exported. The older repository placeholder incorrectly equated `DQ_STATUS='INVALID'` with the rejection reason; it has been corrected to `DQ_REASON AS REJECTION_REASON`. The `schema.yml` generic tests and `tests/assert_trade_reconciliation.sql` singular test reflect established lab logic.
 
-The eventual Iceberg migration will update `sources.yml` to point to `IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG`; **do not change source mappings until the Iceberg backfill and reconciliation succeed**.
+The historical Iceberg backfill reconciled and a five-file Parquet COPY loaded 392 new events with no errors. **The GitHub reconstructed models are staged for dbt cutover**: `sources.yml` now defines `ib_iceberg` in `IB_LAB.BRONZE` and `stg_trade_events.sql` reads that Iceberg table. The user's authoritative Snowflake Workspaces project has not yet been reported rebuilt against Iceberg; do not label this version verified until the dbt build succeeds.
 
 ## Model dependency DAG
 
