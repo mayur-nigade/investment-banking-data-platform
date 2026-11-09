@@ -15,7 +15,7 @@ Synthetic trade / client / account / instrument sources
                    |
            Snowflake external stage
                    |
-     Bronze: Snowflake-managed Iceberg on S3   [PLANNED]
+     Bronze: Snowflake-managed Iceberg on S3   [IMPLEMENTED]
                    |
          Silver: dbt staging / quality
                    |
@@ -37,9 +37,11 @@ Synthetic trade / client / account / instrument sources
 | Iceberg Bronze table / schema | Completed | Table exists; all 17 columns and `INGESTED_AT TIMESTAMP_LTZ(6)` inspected |
 | Iceberg vs RAW ID-set comparison | Completed | 0 missing distinct `EVENT_ID`s, 0 extra distinct `EVENT_ID`s |
 | Iceberg historical row-count parity | Completed | 1,704 native RAW = 1,704 Iceberg Bronze; both-way distinct EVENT_ID delta = 0 |
+| Five-file Parquet batch ingestion to Iceberg | Completed | Five files, 392 rows loaded, 0 reported errors |
+| dbt source cutover to Iceberg | **Planned** | Source definitions updated in GitHub; workspace build not confirmed |
 | Snowpipe / Streams / Tasks / CDC MERGE | Planned | Not implemented yet |
 
-**Important:** The five November 3 Parquet files are staged but **have not been loaded** to Bronze/RAW as part of the confirmed milestones. We will not double-ingest the earlier historical CSV batches after converting them to Parquet.
+**Important:** The five November 3 Parquet files were successfully loaded into Iceberg Bronze (392 rows, zero COPY errors); older Parquet copies of historical CSV batches are not reloaded. The expected total is 2,096, with post-load count checks reported complete by the user but no numeric result pasted.
 
 ## Repository contents
 
