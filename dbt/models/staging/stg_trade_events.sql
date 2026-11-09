@@ -30,7 +30,8 @@ WITH typed_data AS (
         SOURCE_FILE,
         FILE_ROW_NUMBER,
         INGESTED_AT
-    FROM {{ source('ib_raw', 'RAW_TRADE_EVENTS') }}
+    -- Pending workspace cutover, GitHub snapshot now points at Iceberg Bronze.
+    FROM {{ source('ib_iceberg', 'RAW_TRADE_EVENTS_ICEBERG') }}
 
 ),
 
