@@ -1,6 +1,6 @@
 # AWS S3 → Snowflake-managed Apache Iceberg: Implementation runbook
 
-**Status: PROPOSED / not executed.** This is for the synthetic-data portfolio lab. Do not claim production use at Jefferies.
+**Status: AWS external volume verified; Iceberg table and 1,704-event historical backfill reconciled. The upcoming 392-record Parquet load is planned, NOT executed.** This is for the synthetic-data portfolio lab. Do not claim production use at Jefferies.
 
 ## Objective / separation of concerns
 
@@ -55,8 +55,8 @@ If the S3 bucket uses an SSE-KMS customer-managed key, also grant the IAM role a
 - `DESC EXTERNAL VOLUME` trust principal set [ ]
 - Verify external volume = success true [ ]
 - Iceberg table exists [ ]
-- Native RAW 1704 = Iceberg Bronze 1704 [ ]
-- No missing/extra `EVENT_ID` values [ ]
+- Native RAW 1704 = Iceberg Bronze 1704 [x]
+- No missing/extra distinct `EVENT_ID` values [x]
 - Iceberg S3 location contains new data/metadata [ ]
 
 
@@ -105,3 +105,13 @@ FROM IB_LAB.RAW.RAW_TRADE_EVENTS;
 **Storage nuance:** Snowflake may generate `trade_events.<randomId>/data/` and `.../metadata/` under the volume root when `BASE_LOCATION='trade_events'`; the exact physical folder need not be exactly `trade_events/`.
 
 Official sources: https://docs.snowflake.com/en/user-guide/tables-iceberg-data-types ; https://docs.snowflake.com/en/sql-reference/sql/create-iceberg-table-snowflake ; https://docs.snowflake.com/en/sql-reference/sql/select ; https://docs.snowflake.com/en/user-guide/tables-iceberg-managing-external-volumes
+
+## Next milestone: Parquet batch 2026-11-03 → Iceberg Bronze (not yet run)
+
+**Source:** five staged Parquet files (79 + 79 + 78 + 78 + 78 = 392 events) at `@IB_LAB.RAW.IB_S3_STAGE/parquet/batches/batch_2026-11-03/`. The 14 source columns are string-typed; the existing Iceberg table has 17 columns including `SOURCE_FILE`, `FILE_ROW_NUMBER`, `INGESTED_AT`.
+
+The full, reviewed **planned SQL** is [02_load_new_trade_parquet_batch.sql](../sql/iceberg/02_load_new_trade_parquet_batch.sql). It uses a `COPY INTO ... FROM (SELECT...)` transform to map all 14 source fields and fill the three audit columns with stage metadata, casting `METADATA$START_SCAN_TIME` to `TIMESTAMP_LTZ(6)`. `LOAD_MODE=FULL_INGEST` produces Iceberg-managed Parquet under the external volume; `PURGE=FALSE` preserves the source files; `FORCE=TRUE` is deliberately omitted.
+
+**Never combine `MATCH_BY_COLUMN_NAME` with a COPY SELECT transform.** The alternate `ADD_FILES_COPY` mode can't be used for this transform. After execution, confirm five files loaded, no errors, total Iceberg rows = 2096, and 392 records grouped by new source-file paths. This is **not yet observed**.
+
+Reference: https://docs.snowflake.com/en/user-guide/tables-iceberg-load and https://docs.snowflake.com/en/sql-reference/sql/copy-into-table .
