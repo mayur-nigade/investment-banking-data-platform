@@ -145,3 +145,19 @@ The repository initially included client staging, dbt test YAML and a singular t
 **This establishes:** Historical native-RAW-to-Iceberg count parity and matching distinct `EVENT_ID` membership. It does **not** prove every non-key field has identical values or check duplicate IDs directly. The 392 new events staged in the five 2026-11-03 Parquet files are **not yet loaded** into Iceberg.
 
 **Next planned query:** [Parquet COPY INTO Iceberg Bronze](../sql/iceberg/02_load_new_trade_parquet_batch.sql). Uses `FULL_INGEST`, reads 14 lower-case Parquet fields by name, records source file/row/timestamp metadata, preserves original files (`PURGE=FALSE`), and never forces a replay. **Expected count after one successful load: 2,096; unverified.**
+
+## 2026-11-09 — Five Parquet files loaded into Iceberg; fast-track dbt cutover
+
+**Verified Snowflake COPY output supplied by user:** All five Parquet files for the 2026-11-03 batch have `STATUS=LOADED`, `ERRORS_SEEN=0`, and `ROWS_PARSED=ROWS_LOADED`:
+- 001: 79
+- 002: 79
+- 003: 78
+- 004: 78
+- 005: 78
+- **Total loaded 392, errors 0**.
+
+Historical Iceberg count was **1704** and historical ID parity had been verified. The **expected** total after a successful once-only load is **2096**. The user reports having checked all final counts and asks to skip further repetitive validations; actual numeric post-load count output wasn't pasted in this exchange.
+
+**Next implementation (PLANNED, not executed):** Change dbt `stg_trade_events` input from `source('ib_raw','RAW_TRADE_EVENTS')` to `source('ib_iceberg','RAW_TRADE_EVENTS_ICEBERG')`, while preserving `RAW_CLIENTS` in native RAW. Add `ib_iceberg` in `sources.yml`; run `dbt build --select +stg_trade_events+` in Snowflake Workspaces once to rebuild the lineage and run tests. Github's reconstructed `stg_trade_events.sql` now reflects **the intended cutover**, not a verified production/workspace edit.
+
+**Next training in fast-track mode:** Snowpipe vs COPY, append-only Streams on Snowflake-managed Iceberg (note: creating a stream starts tracking *future* changes), Tasks and CDC MERGE / SCD2; no repeat of previous counts.
