@@ -39,7 +39,9 @@ Synthetic trade / client / account / instrument sources
 | Iceberg historical row-count parity | Completed | 1,704 native RAW = 1,704 Iceberg Bronze; both-way distinct EVENT_ID delta = 0 |
 | Five-file Parquet batch ingestion to Iceberg | Completed | Five files, 392 rows loaded, 0 reported errors |
 | dbt source cutover to Iceberg | **Planned** | Source definitions updated in GitHub; workspace build not confirmed |
-| Snowpipe / Streams / Tasks / CDC MERGE | Planned | Not implemented yet |
+| Snowflake append-only stream | User reports created | Stream starts from creation offset; no historical replay |
+| Current trade-state CDC bootstrap & Task | Planned | Versioned SQL ready to execute, not yet run |
+| Snowpipe auto-ingestion / SCD2 | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files were successfully loaded into Iceberg Bronze (392 rows, zero COPY errors); older Parquet copies of historical CSV batches are not reloaded. The expected total is 2,096, with post-load count checks reported complete by the user but no numeric result pasted.
 
@@ -59,6 +61,8 @@ Synthetic trade / client / account / instrument sources
 - [`dbt/dbt_project.yml`](dbt/dbt_project.yml) — reproducible starter config, not a live workspace export
 - [`sql/quality/02_trade_dq_diagnostics.sql`](sql/quality/02_trade_dq_diagnostics.sql) — reason-level DQ and orphan-client investigations
 - [`dbt/README.md`](dbt/README.md) — model lineage, run instructions and code provenance
+- [`sql/cdc/03_bootstrap_current_trades.sql`](sql/cdc/03_bootstrap_current_trades.sql) — **planned** one-time Gold current-state bootstrap using the latest valid event per trade
+- [`sql/cdc/04_triggered_trade_cdc_task.sql`](sql/cdc/04_triggered_trade_cdc_task.sql) — **planned** Iceberg stream-triggered MERGE task for future I/U/D events
 
 ## Key design decisions
 
