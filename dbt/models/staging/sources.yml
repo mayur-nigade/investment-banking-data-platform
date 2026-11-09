@@ -11,3 +11,10 @@ sources:
     tables:
       - name: RAW_TRADE_EVENTS
       - name: RAW_CLIENTS
+
+  # New Snowflake-managed Iceberg Bronze source; 17 columns match RAW.
+  - name: ib_iceberg
+    database: IB_LAB
+    schema: BRONZE
+    tables:
+      - name: RAW_TRADE_EVENTS_ICEBERG
