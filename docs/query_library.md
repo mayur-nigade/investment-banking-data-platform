@@ -15,5 +15,7 @@
 | Iceberg volume and CTAS | [sql/iceberg/01_external_volume_and_backfill.sql](../sql/iceberg/01_external_volume_and_backfill.sql) |
 | Iceberg deployment steps | [docs/iceberg_aws_setup.md](iceberg_aws_setup.md) |
 | Parquet 392-row batch → Iceberg COPY, full metadata | [sql/iceberg/02_load_new_trade_parquet_batch.sql](../sql/iceberg/02_load_new_trade_parquet_batch.sql) |
+| Gold current trade state initial bootstrap (planned) | [sql/cdc/03_bootstrap_current_trades.sql](../sql/cdc/03_bootstrap_current_trades.sql) |
+| Triggered append-only stream CDC MERGE task (planned) | [sql/cdc/04_triggered_trade_cdc_task.sql](../sql/cdc/04_triggered_trade_cdc_task.sql) |
 
 The repository is the source of truth for code and version history. Notion contains explanations and links. Status labels **VERIFIED / CAPTURED / PLANNED** should be preserved.
