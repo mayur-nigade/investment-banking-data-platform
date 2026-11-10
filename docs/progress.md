@@ -193,3 +193,18 @@ One synthetic I event is inserted directly into Snowflake-managed Iceberg Bronze
 **Expected, not observed:** First insert = 1 row, task history contains `SCHEDULED_FROM='TRIGGER'` and `STATE='SUCCEEDED'`, Gold one row with `LAST_EVENT_TYPE='I'`, `LAST_SOURCE_SEQUENCE=1`, `IS_DELETED=FALSE`. Zero inserted on first run suggests missing Gold bootstrap or previous test event; a FAILED task requires inspection, not repeated INSERT.
 
 **Next learning:** SCD Type 2 using historical event timeline and dbt snapshots vs purpose-built interval model. Keep verification minimal and advance once this single trigger path works.
+
+## 2026-11-10 — Triggered CDC task succeeded; SKIPPED condition checks explained
+
+**Actual user-provided TASK_HISTORY:** `IB_LAB.GOLD.APPLY_TRADE_CDC_TASK` has `STATE=SUCCEEDED`, `SCHEDULED_FROM=TRIGGER` at `2026-11-10 07:56:22.094 -0800`. Other `TRIGGER` records were `SKIPPED` at `07:37:24.289 -0800` and `07:56:49.972 -0800`, each with `Conditional expression for task evaluated to false.`.
+
+**Interpretation (Snowflake docs):** A `SKIPPED` record means the task's `WHEN SYSTEM$STREAM_HAS_DATA('IB_LAB.BRONZE.TRADE_EVENTS_APPEND_STREAM')` evaluated FALSE, so Snowflake did not execute the MERGE or resume warehouse compute. `SCHEDULED_FROM=TRIGGER` denotes the task type/event mechanism, not proof that the condition evaluated TRUE. A `SUCCEEDED` run means the task SQL completed without errors; does not alone prove row-level Gold state changed.
+
+**Stream semantics:** `SELECT * FROM stream` is non-consuming; a successful consuming DML (our MERGE) advances the stream offset. With no newer appended Iceberg changes, a read-only SELECT should now return zero pending rows. A new append would make stream data available again. `SYSTEM$STREAM_HAS_DATA` is designed to avoid false negatives and may yield a false positive (TRUE when net CDC rows are empty).
+
+**Follow-up:** One targeted query of the synthetic trade `LAB_CDC_TRD_20261110_001` in `IB_LAB.GOLD.CURRENT_TRADES` is enough to confirm business-state success; do not repeat historical Bronze counts. No Gold result was supplied yet, so **do not mark CDC row-state assertion verified**.
+
+Official references:
+- https://docs.snowflake.com/en/sql-reference/functions/task_history
+- https://docs.snowflake.com/en/sql-reference/functions/system_stream_has_data
+- https://docs.snowflake.com/en/user-guide/streams-manage
