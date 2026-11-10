@@ -19,3 +19,7 @@
 | Triggered append-only stream CDC MERGE task (planned) | [sql/cdc/04_triggered_trade_cdc_task.sql](../sql/cdc/04_triggered_trade_cdc_task.sql) |
 
 The repository is the source of truth for code and version history. Notion contains explanations and links. Status labels **VERIFIED / CAPTURED / PLANNED** should be preserved.
+
+## Task concepts reference
+
+The [triggered CDC task SQL](../sql/cdc/04_triggered_trade_cdc_task.sql) demonstrates `CREATE TASK IF NOT EXISTS`, `WAREHOUSE` (user-managed compute), `WHEN SYSTEM$STREAM_HAS_DATA('<stream>')` (event trigger, not a SCHEDULE), `AS MERGE` (the transactional stream consumer), and `ALTER TASK ... RESUME`. User reported task creation on 2026-11-10; STARTED state and task execution are not yet verified. Full instructional notes: [Notion query reference](https://app.notion.com/p/4127b5a3502e814eb844dd73e0868159).
