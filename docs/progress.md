@@ -183,3 +183,13 @@ Two new scripts are versioned:
 **User preference:** fast-track learning, high-level MERGE only (advanced SQL already known); avoid repeat full counts. Next meaningful exercise: check task STARTED and one true post-stream event through task into `CURRENT_TRADES`.
 
 **Caveats:** No actual TASK_HISTORY result, STARTED state, or CDC transaction success has been provided. The implementation also lacks persistent rejects for filtered invalid stream records.
+
+## 2026-11-10 — Triggered CDC end-to-end test SQL published (NOT YET RUN)
+
+One synthetic I event is inserted directly into Snowflake-managed Iceberg Bronze; the append-only stream should expose the appended row, triggered `APPLY_TRADE_CDC_TASK` should execute its MERGE, and `GOLD.CURRENT_TRADES` should show the new active trade.
+
+**Canonical SQL:** [05_triggered_cdc_smoke_test.sql](../sql/cdc/05_triggered_cdc_smoke_test.sql). Uses fresh synthetic keys `LAB_CDC_EVT_20261110_001` / `LAB_CDC_TRD_20261110_001`, one existing active Gold record for known-good attributes, and a NOT EXISTS guard to prevent duplicate test inserts. The script includes task RESUME, one INSERT, `IB_LAB.INFORMATION_SCHEMA.TASK_HISTORY` (TASK_NAME takes the unqualified task name) and one Gold state query.
+
+**Expected, not observed:** First insert = 1 row, task history contains `SCHEDULED_FROM='TRIGGER'` and `STATE='SUCCEEDED'`, Gold one row with `LAST_EVENT_TYPE='I'`, `LAST_SOURCE_SEQUENCE=1`, `IS_DELETED=FALSE`. Zero inserted on first run suggests missing Gold bootstrap or previous test event; a FAILED task requires inspection, not repeated INSERT.
+
+**Next learning:** SCD Type 2 using historical event timeline and dbt snapshots vs purpose-built interval model. Keep verification minimal and advance once this single trigger path works.
