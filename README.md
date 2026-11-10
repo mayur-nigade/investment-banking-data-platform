@@ -62,7 +62,8 @@ Synthetic trade / client / account / instrument sources
 - [`sql/quality/02_trade_dq_diagnostics.sql`](sql/quality/02_trade_dq_diagnostics.sql) — reason-level DQ and orphan-client investigations
 - [`dbt/README.md`](dbt/README.md) — model lineage, run instructions and code provenance
 - [`sql/cdc/03_bootstrap_current_trades.sql`](sql/cdc/03_bootstrap_current_trades.sql) — **planned** one-time Gold current-state bootstrap using the latest valid event per trade
-- [`sql/cdc/04_triggered_trade_cdc_task.sql`](sql/cdc/04_triggered_trade_cdc_task.sql) — **planned** Iceberg stream-triggered MERGE task for future I/U/D events
+- [`sql/cdc/04_triggered_trade_cdc_task.sql`](sql/cdc/04_triggered_trade_cdc_task.sql) — **created (user-reported)** Iceberg stream-triggered MERGE task for future I/U/D events
+- [`sql/cdc/05_triggered_cdc_smoke_test.sql`](sql/cdc/05_triggered_cdc_smoke_test.sql) — **planned** one-event end-to-end CDC smoke test with task history and Gold validation
 
 ## Key design decisions
 
