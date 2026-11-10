@@ -40,7 +40,7 @@ Synthetic trade / client / account / instrument sources
 | Five-file Parquet batch ingestion to Iceberg | Completed | Five files, 392 rows loaded, 0 reported errors |
 | dbt source cutover to Iceberg | **Planned** | Source definitions updated in GitHub; workspace build not confirmed |
 | Snowflake append-only stream | User reports created | Stream starts from creation offset; no historical replay |
-| Current trade-state CDC bootstrap & Task | Planned | Versioned SQL ready to execute, not yet run |
+| Current trade-state CDC bootstrap & Task | Task created (user-reported) | Task STARTED state and CDC execution not yet confirmed |
 | Snowpipe auto-ingestion / SCD2 | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files were successfully loaded into Iceberg Bronze (392 rows, zero COPY errors); older Parquet copies of historical CSV batches are not reloaded. The expected total is 2,096, with post-load count checks reported complete by the user but no numeric result pasted.
