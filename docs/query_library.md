@@ -19,7 +19,7 @@
 | Triggered append-only stream CDC MERGE task (planned) | [sql/cdc/04_triggered_trade_cdc_task.sql](../sql/cdc/04_triggered_trade_cdc_task.sql) |
 | End-to-end triggered CDC smoke test (planned) | [sql/cdc/05_triggered_cdc_smoke_test.sql](../sql/cdc/05_triggered_cdc_smoke_test.sql) |
 
-The end-to-end test is a synthetic event, not yet executed. Expected evidence: INSERT=1, task SUCCEEDED/TRIGGER, Gold active trade.\n
+The end-to-end test is a synthetic event, not yet executed. Expected evidence: INSERT=1, task SUCCEEDED/TRIGGER, Gold active trade.
 The repository is the source of truth for code and version history. Notion contains explanations and links. Status labels **VERIFIED / CAPTURED / PLANNED** should be preserved.
 
 ## Task concepts reference
