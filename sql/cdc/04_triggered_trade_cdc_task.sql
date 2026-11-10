@@ -1,5 +1,7 @@
 -- Step 2: triggered CDC task on the existing append-only Iceberg stream.
--- STATUS: PLANNED; not yet executed in Snowflake.
+-- STATUS: user reports task CREATED (2026-11-10).
+-- Whether ALTER TASK ... RESUME succeeded / task is STARTED is not confirmed.
+-- No observed task execution or successful CDC MERGE has been shared.
 --
 -- PREREQUISITES
 -- 1) IB_LAB.BRONZE.TRADE_EVENTS_APPEND_STREAM exists and is append-only.
