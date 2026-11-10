@@ -173,3 +173,13 @@ Two new scripts are versioned:
 **Important design assumptions:** incoming I/U/D events carry complete row images and `SOURCE_SEQUENCE` advances per `TRADE_ID`. Older sequence events cannot overwrite newer states. Invalid streamed events remain in raw Iceberg but are not separately persisted in an exception table by this learning slice; a production version must add a durable reject/audit flow and replay strategy. The task has NOT been created or resumed via connector in the user's Snowflake account.
 
 **Sequence:** Execute Gold bootstrap SQL once, then task create/resume. No new post-stream events have yet been confirmed for CDC processing.
+
+## 2026-11-10 — Triggered CDC task created (user-reported)
+
+**User reports:** `IB_LAB.GOLD.APPLY_TRADE_CDC_TASK` was created. The task follows the versioned `CREATE TASK IF NOT EXISTS ... WAREHOUSE=COMPUTE_WH WHEN SYSTEM$STREAM_HAS_DATA('IB_LAB.BRONZE.TRADE_EVENTS_APPEND_STREAM') AS MERGE ...` pattern. This is a **task-creation milestone**, not evidence that `ALTER TASK ... RESUME` succeeded or that a new event has been processed.
+
+**Core learning:** a Snowflake triggered task has no `SCHEDULE`; its `WHEN` stream condition detects potential new changes without consuming them; the MERGE reads the append-only stream in its DML transaction, and on success advances the stream offset. `IF NOT EXISTS` avoids recreation but won't modify existing definitions. `WAREHOUSE=COMPUTE_WH` means user-managed compute. The task logic validates event payloads, chooses latest by source sequence/timestamp, only MERGEs newer states, and uses `IS_DELETED` tombstones for D events.
+
+**User preference:** fast-track learning, high-level MERGE only (advanced SQL already known); avoid repeat full counts. Next meaningful exercise: check task STARTED and one true post-stream event through task into `CURRENT_TRADES`.
+
+**Caveats:** No actual TASK_HISTORY result, STARTED state, or CDC transaction success has been provided. The implementation also lacks persistent rejects for filtered invalid stream records.
