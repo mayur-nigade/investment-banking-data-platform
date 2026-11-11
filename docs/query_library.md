@@ -43,3 +43,9 @@ The [triggered CDC task SQL](../sql/cdc/04_triggered_trade_cdc_task.sql) demonst
 **Observed:** Snowpipe auto-prefix file `trade_settlements_001.parquet` appears as 403 Iceberg Bronze rows, but user reports **403 rejects**, all `INVALID_QUANTITY`. This is a schema/business-contract failure **downstream of file ingestion**, not evidence that the Snowpipe service itself failed. The exact quantity field's raw values were not supplied; missing/incorrectly named field, NULL, zero or invalid numeric are possible.
 
 **Correction:** Do not relax DQ or resend that settlement file with a different filename. Upload one new genuine trade-event Parquet from the November 5 batch that matches the 14-field trade-event contract and contains new event IDs; check only its DQ result then Gold. Settlement ingestion would require a dedicated contract/pipeline if it is in scope later.
+
+## Confirmed cross-domain file issue — trade settlements sent into trade-event Snowpipe
+
+**Raw Parquet keys verified:** `custodian`, `settled_amount`, `settlement_currency`, `settlement_date`, `settlement_id`, `settlement_status`, `settlement_ts`, `trade_id`. There is **no `quantity` key**. The trade-event Snowpipe mapping targets a 14-field trade-event schema, so 403 settlement records landed in Bronze with NULL quantity and were rejected by dbt `INVALID_QUANTITY`. Correct diagnosis is **wrong-domain file routing / missing fields** (not source data containing invalid numeric quantity).
+
+Keep trade-event mapping, upload genuine `trade_events_*.parquet` to auto-prefix, then validate new source file + Gold. Longer term, separate trade and settlement S3 prefixes and ingestion contracts. Don't assume Snowpipe's successful file ingest implies DQ compliance.
