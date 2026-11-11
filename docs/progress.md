@@ -238,3 +238,13 @@ Official references:
 6. **Production-style reference design, not yet production-certified.** Before real deployment: schema contracts, sequence collision detection, bitemporal rules, permissions, idempotency concurrency tests, monitoring, task costs, operational recovery, and scale/performance must be verified.
 
 **Next user action:** execute ONLY script 07 in Snowflake and verify one current history version per TRADE_ID; keep 08 untouched until bootstrap succeeds. No historical RAW/Iceberg counts need repeating.
+
+## 2026-11-11 — Idempotency gap confirmed in existing pipeline
+
+**User question:** If an identical file is submitted again, or an identical data set arrives with a different filename, does our pipeline remain idempotent?
+
+**Answer from reviewed source:** **Partial only.** Snowflake `COPY INTO` load history generally stops reloading the same file path/identity within its supported history window (we do not use FORCE=TRUE), but a new filename containing the same events can write duplicate rows into Iceberg Bronze. Our dbt staging model has validation and client checks but no source event-ID deduplication. Gold CDC MERGE applies per-trade ordering and gives partial protection of current state, but it neither removes duplicated Bronze records nor guarantees conflict safety for different EVENT_IDs on the same source sequence. The SCD2 learning view and planned physical SCD2 desired-state view dedupe identical EVENT_IDs, but not differently identified events.
+
+**Recommendation (NOT YET IMPLEMENTED):** file-ingestion ledger (file identity & status) + canonical deduplicated Silver event layer (producer-stable SOURCE_SYSTEM/EVENT_ID, preserve duplicate/conflict audit) + strictly ordered Gold state MERGE with source-sequence collision detection. Never rely on standard Snowflake UNIQUE/PK constraints to enforce this; they are informational. See [Idempotency and replay design](idempotency_and_replay_design.md) and the two read-only Bronze duplicate diagnostics therein.
+
+**Next lab:** test a copied Parquet file under a distinct name, observe duplicate raw event keys, implement a canonical event model and audit, then confirm Gold current state stays unchanged under replay. This is a planned learning milestone, not verified.
