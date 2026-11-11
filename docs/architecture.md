@@ -36,6 +36,14 @@ The repository is public. Keep **real data, personal information, tokens, passwo
 
 ## Tooling / status
 
-- **Implemented and verified:** S3 external stage, CSV ingestion into native RAW, dbt staging + client relationship checks, custom reconciliation test, staged Parquet inspection.
-- **Planned:** writable Iceberg external volume, Iceberg Bronze, automated Snowpipe, Streams/Tasks/CDC, Gold marts.
+- **Implemented and user-verified:** S3 stage/native RAW ingestion, dbt views/tests, Snowflake-managed Iceberg external volume and 1,704-event backfill, 392 new Parquet events loaded, append-only stream, triggered CDC task and new trade reaching physical GOLD.CURRENT_TRADES.
+- **Planned / code drafted:** learning SCD2 history view; separate physical SCD2 table and dedicated-stream triggered incremental procedure (see sql/scd2/07 and 08); automated Snowpipe, performance/production hardening.
 - dbt execution in this lab is through **Snowflake Workspaces (native dbt project)**. The repository initially captures only known model/test files; do not assume a standalone local dbt project is ready to execute.
+
+## SCD2 dual-path trade history (2026-11-11; not yet executed)
+
+**Path A, learning:** `GOLD.V_TRADE_SCD2_HISTORY` is a read-time view over `DBT_DEV.INT_VALID_TRADES`, using each valid I/U/D event as one version; useful for comparing event-version history with full state changes.
+
+**Path B, production-style:** `BRONZE.TRADE_EVENTS_SCD2_STREAM` is a **separate** Iceberg append-only stream, so current-state CDC task consumption does not affect SCD2 offsets. `GOLD.V_TRADE_SCD2_DESIRED` computes historical **attribute-change** versions from validated events (SHA-256 of tracked values including delete status). `GOLD.TRADE_SCD2_HISTORY` persists them in a native Snowflake table with validity intervals, current flag and soft-delete marker. After a one-time bootstrap, `GOLD.SP_APPLY_TRADE_SCD2` processes future appended keys and reconstructs only those trades' full chains (corrects late sequence events), wraps stream read + physical re-publication + reject/audit writes in one transaction; `GOLD.APPLY_TRADE_SCD2_TASK` invokes it when the dedicated stream has data.
+
+This is a production-style lab **blueprint, not a completed production deployment**. Requirements needing contract validation: full-row D events, per-trade authoritative sequence, duplicate sequence conflicts, timestamps and bitemporal business meaning, security, task alerting, failover and workload cost.
