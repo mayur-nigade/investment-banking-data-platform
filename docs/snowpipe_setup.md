@@ -101,3 +101,9 @@ SELECT 'REJECTED', COUNT(*)
 FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
 WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet';
 ```
+
+### Confirmed DQ outcome for the first auto-prefix file
+
+The user queried `INT_REJECTED_TRADES` and confirmed **all 403** rows of `trade_settlements_001.parquet` had `REJECTION_REASON=INVALID_QUANTITY`. Snowpipe ingestion into Iceberg succeeded, but the trade-event contract failed. A settlement-specific payload may have different field names; actual payload fields have not been inspected. Do not weaken the trade-event quantity validation just to pass this file.
+
+**Next file:** one *new* `trade_events_*.parquet` from batch 20261105 with the known 14 trade-event keys and new EVENT_IDs under `landingzone/parquet/auto/`. One targeted DQ + Gold verification will finish the end-to-end Snowpipe test.
