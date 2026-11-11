@@ -279,3 +279,21 @@ Official references:
 Dedicated [Notion Snowpipe revision page](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) now covers architecture, strengths/limits, comparison with COPY and Streaming, modern fixed credits/GB, file metadata and pause retention (14 days), REFRESH (7 days), troubleshooting and 15 interview questions with short answers. Confirmed against Snowflake official docs.
 
 **Important SQL fix:** Original prepared pipe used `ON_ERROR=ABORT_STATEMENT`, a bulk-COPY-only option unsupported inside Snowpipe. Corrected [09 Snowpipe SQL](../sql/snowpipe/09_s3_auto_ingest_to_iceberg.sql) to `ON_ERROR=SKIP_FILE`; made equivalent correction in Notion Section 22. No evidence user already executed original SQL. Pipe creation and AWS notification still not verified.
+
+## 2026-11-11 — Snowpipe auto-prefix file arrived in Iceberg (USER-VERIFIED)
+
+**Actual user-provided query result:** `SOURCE_FILE='landingzone/parquet/auto/trade_settlements_001.parquet'`, `ROWS_INGESTED=403` in `IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG`. This establishes the file's **403 rows are in Iceberg Bronze** under the monitored auto-ingest prefix. User intended to test Snowpipe on this prefix; if no manual COPY was used, it provides strong evidence S3 event → Snowpipe → Iceberg auto-ingestion is functioning. **TASK_HISTORY/COPY_HISTORY or explicit absence of manual COPY was not supplied**, so do not claim the specific pipe execution was independently observed.
+
+**Potential source-schema mismatch:** The file's name indicates **trade settlements**, whereas `TRADE_EVENTS_AUTO_PIPE` maps 14 lowercase TRADE EVENT fields (`event_id, trade_id, event_type, source_sequence, client_id, account_id, instrument_id, side, quantity, price, trade_currency, trade_date, event_ts, source_system`). A successful file load does **not** establish that those fields are populated, that dbt DQ passed, or that the downstream Gold CDC/SCD2 paths processed 403 valid trade events. Mapped missing Parquet keys could generate NULL target values.
+
+**Minimal targeted next check:** 
+```sql
+SELECT 'VALID' AS STATUS, COUNT(*) AS RECORDS
+FROM IB_LAB.DBT_DEV.INT_VALID_TRADES
+WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet'
+UNION ALL
+SELECT 'REJECTED', COUNT(*)
+FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
+WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet';
+```
+If all/most reject, inspect one Bronze sample and the rejection reason, then use an actual trade-event Parquet file with new EVENT_IDs. **Do not repeat historical 1704/392 checks.** Physical SCD2 procedure/table created per user; SCD2 task STARTED and Gold arrival of this 403-row file remain unverified. Idempotency hardening deferred until full pipeline completed.
