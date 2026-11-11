@@ -37,3 +37,9 @@ The [triggered CDC task SQL](../sql/cdc/04_triggered_trade_cdc_task.sql) demonst
 ## Snowpipe interview revision notes
 
 [Snowpipe — Senior Data Engineer Interview Quick Revision](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) (standalone Notion page): definition, S3 → SQS → PIPE → Iceberg architecture, COPY vs Snowpipe vs Streaming, advantages, disadvantages, 14-day file metadata, REFRESH 7 days, error handling, 2026 credit-per-GB cost, troubleshooting SQL, 15 interview Q&A. Snowpipe pipeline SQL was corrected to `ON_ERROR=SKIP_FILE` (not `ABORT_STATEMENT`).
+
+## Snowpipe troubleshooting example — ingestion succeeded, DQ rejected (11 Nov 2026)
+
+**Observed:** Snowpipe auto-prefix file `trade_settlements_001.parquet` appears as 403 Iceberg Bronze rows, but user reports **403 rejects**, all `INVALID_QUANTITY`. This is a schema/business-contract failure **downstream of file ingestion**, not evidence that the Snowpipe service itself failed. The exact quantity field's raw values were not supplied; missing/incorrectly named field, NULL, zero or invalid numeric are possible.
+
+**Correction:** Do not relax DQ or resend that settlement file with a different filename. Upload one new genuine trade-event Parquet from the November 5 batch that matches the 14-field trade-event contract and contains new event IDs; check only its DQ result then Gold. Settlement ingestion would require a dedicated contract/pipeline if it is in scope later.
