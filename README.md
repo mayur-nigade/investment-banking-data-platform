@@ -92,3 +92,5 @@ This repository is being built **incrementally**, with verified milestones label
 
 ---
 **Portfolio disclosure:** all examples and source records are synthetic, for educational and demonstration use.
+
+**Current execution priority (2026-11-11):** finish the SCD2 learning view, physical SCD2 bootstrap + incremental task, and Snowpipe on a new incoming-file prefix; validate one end-to-end new file. [Idempotency hardening](docs/idempotency_and_replay_design.md) is explicitly postponed and not claimed as implemented.
