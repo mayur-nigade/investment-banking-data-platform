@@ -248,3 +248,16 @@ Official references:
 **Recommendation (NOT YET IMPLEMENTED):** file-ingestion ledger (file identity & status) + canonical deduplicated Silver event layer (producer-stable SOURCE_SYSTEM/EVENT_ID, preserve duplicate/conflict audit) + strictly ordered Gold state MERGE with source-sequence collision detection. Never rely on standard Snowflake UNIQUE/PK constraints to enforce this; they are informational. See [Idempotency and replay design](idempotency_and_replay_design.md) and the two read-only Bronze duplicate diagnostics therein.
 
 **Next lab:** test a copied Parquet file under a distinct name, observe duplicate raw event keys, implement a canonical event model and audit, then confirm Gold current state stays unchanged under replay. This is a planned learning milestone, not verified.
+
+## 2026-11-11 — Scope freeze: complete pipeline before idempotency hardening
+
+**User decision:** Finish the full Snowflake+Iceberg+dbt+CDC+SCD2+Snowpipe teaching pipeline quickly. Explicitly defer same-file/new-filename deduplication, canonical-event layer, file ledger, full-scale replay controls and performance hardening until after the pipeline is working end-to-end. The documented gap remains acknowledged in [idempotency review](idempotency_and_replay_design.md), not fixed.
+
+**Fast completion sequence:**
+1. Execute learning SCD2 history VIEW from `sql/scd2/06_trade_history_from_events.sql` (or equivalent dbt model, don't need both executions); one look at version history.
+2. Execute `sql/scd2/07_physical_scd2_bootstrap.sql` to create separate stream, physical SCD2 table and audit tables; one current-version check.
+3. Execute `sql/scd2/08_incremental_physical_scd2_task.sql`: create stored procedure/task, test a new changed event, then enable the task. This is **planned code, not yet run**.
+4. Add Snowpipe to a **new, dedicated incoming Parquet prefix** (not historical batch locations), retaining metadata columns. AWS S3 event integration and pipe configuration still need to be implemented and verified.
+5. One end-to-end demonstration: new landing object → Snowpipe → Iceberg → Streams/Tasks → Gold current + persisted SCD2. The existing 1704/392 historical counts will NOT be repeatedly retested.
+
+**Definition of done:** show one new, clean trade I/U event passing both Gold paths and an automatically triggered file ingestion; record execution evidence. Only then return to idempotency and operational hardening. Do not claim this is already done.
