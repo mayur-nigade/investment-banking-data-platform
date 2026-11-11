@@ -107,3 +107,9 @@ WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet';
 The user queried `INT_REJECTED_TRADES` and confirmed **all 403** rows of `trade_settlements_001.parquet` had `REJECTION_REASON=INVALID_QUANTITY`. Snowpipe ingestion into Iceberg succeeded, but the trade-event contract failed. A settlement-specific payload may have different field names; actual payload fields have not been inspected. Do not weaken the trade-event quantity validation just to pass this file.
 
 **Next file:** one *new* `trade_events_*.parquet` from batch 20261105 with the known 14 trade-event keys and new EVENT_IDs under `landingzone/parquet/auto/`. One targeted DQ + Gold verification will finish the end-to-end Snowpipe test.
+
+### Root cause confirmed from source Parquet inspection
+
+**Exact source keys:** `custodian`, `settled_amount`, `settlement_currency`, `settlement_date`, `settlement_id`, `settlement_status`, `settlement_ts`, `trade_id`. This is a **settlement** record structure, not trade-event data. No `quantity` field is present. The trade-event pipe's `t.$1:quantity` therefore maps `NULL`, and all **403** records are rejected by trade-event dbt DQ as `INVALID_QUANTITY`.
+
+**Immediate plan:** Use one genuine 14-field `trade_events_*.parquet` file with new event IDs under `landingzone/parquet/auto/`; do not change the working Snowpipe code or loosen DQ. The 403 wrong-domain records are in Bronze and require a later deliberate quarantine/cleanup (do not drop or delete casually). Separate settlement prefix and dedicated settlement schema/pipe/table is recommended later, outside this trade-event pipeline completion scope.
