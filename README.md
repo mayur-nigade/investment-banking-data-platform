@@ -94,3 +94,10 @@ This repository is being built **incrementally**, with verified milestones label
 **Portfolio disclosure:** all examples and source records are synthetic, for educational and demonstration use.
 
 **Current execution priority (2026-11-11):** finish the SCD2 learning view, physical SCD2 bootstrap + incremental task, and Snowpipe on a new incoming-file prefix; validate one end-to-end new file. [Idempotency hardening](docs/idempotency_and_replay_design.md) is explicitly postponed and not claimed as implemented.
+
+## Automated S3 Parquet ingestion (Snowpipe; planned)
+
+- [Snowpipe S3 auto-ingest SQL](sql/snowpipe/09_s3_auto_ingest_to_iceberg.sql) — **PLANNED** pipe on fresh `parquet/auto/` prefix directly into managed Iceberg Bronze
+- [Snowpipe AWS configuration runbook](docs/snowpipe_setup.md) — **PLANNED** S3 object-created notification → Snowflake-managed SQS queue, new-file test
+
+This adds a new source-file prefix to the already verified Iceberg Bronze table, without rereading the five historical Parquet batch files. The user reports completing the physical SCD2 table and incremental stored procedure; the SCD2 task's active/run status has not yet been verified. Once Snowpipe is connected, a fresh synthetic Parquet file can exercise Snowpipe → Iceberg → the independent current-state and physical-SCD2 streams/tasks. Idempotency hardening remains deferred.
