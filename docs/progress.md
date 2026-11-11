@@ -346,3 +346,27 @@ Case-sensitive `t.$1:quantity` may miss uppercase/nested/renamed fields; settlem
 **User statement:** "executed the snowpipe as well" after a locally generated, six-row synthetic `trade_events_snowpipe_20261111_001.parquet` was provided for the S3 `landingzone/parquet/auto/` prefix. Mark **Snowpipe executed (user-reported)**, but do **not** infer that the precise new six-row file was loaded until its targeted source-file result is shown. No new `COPY_HISTORY`, `SYSTEM$PIPE_STATUS`, `DBT_DEV.INT_VALID_TRADES`, `GOLD.CURRENT_TRADES` or `GOLD.TRADE_SCD2_HISTORY` result was supplied in this message.
 
 **Next and ONLY final acceptance check:** Query `IB_LAB.GOLD.CURRENT_TRADES` for `TRADE_ID LIKE 'LABTRD20261111%'`: expect five latest trades, with first sequence 2 and price 71.5000. Query physical SCD2 for `LABTRD202611110001`: expect two attribute-changing versions, only one IS_CURRENT. If neither appears, check valid/rejected counts on exact `SOURCE_FILE='...trade_events_snowpipe_20261111_001.parquet'` and independently verify `APPLY_TRADE_SCD2_TASK` was resumed. Do NOT repeat broad history recounts. Completing the pipe does not by itself prove end-to-end Gold business processing. Idempotency remains deferred.
+
+## 2026-11-11 — Physical SCD2 test trade returns 0 rows (user-observed; diagnostic pending)
+
+User queried `IB_LAB.GOLD.TRADE_SCD2_HISTORY` for newly generated `LABTRD202611110001` after reporting Snowpipe executed, and received **zero rows**. This is a **targeted no-result** report, NOT proof the entire physical SCD2 table is empty.
+
+**Key finding from committed 08_incremental_physical_scd2_task.sql:** `CREATE TASK IF NOT EXISTS IB_LAB.GOLD.APPLY_TRADE_SCD2_TASK` is present but `ALTER TASK ... RESUME` is **commented out deliberately**. User reported the physical table and SP created; independent SCD2 task's enabled/running status remains unverified. A suspended task is the first hypothesis, but fresh trade file may also be missing/not validated or the stream offset may lack the rows.
+
+**Short diagnostics supplied:**
+```sql
+SHOW TASKS LIKE 'APPLY_TRADE_SCD2_TASK' IN SCHEMA IB_LAB.GOLD;
+
+SELECT EVENT_ID, TRADE_ID, EVENT_TYPE, SOURCE_SEQUENCE, PRICE
+FROM IB_LAB.DBT_DEV.INT_VALID_TRADES
+WHERE TRADE_ID='LABTRD202611110001'
+ORDER BY SOURCE_SEQUENCE;
+
+SELECT TRADE_ID, VERSION_NO, PRICE, IS_CURRENT
+FROM IB_LAB.GOLD.V_TRADE_SCD2_DESIRED
+WHERE TRADE_ID='LABTRD202611110001'
+ORDER BY VERSION_NO;
+
+SELECT SYSTEM$STREAM_HAS_DATA('IB_LAB.BRONZE.TRADE_EVENTS_SCD2_STREAM');
+```
+If valid and desired both show two versions and stream has data, safely resume the existing SCD2 Task (only if suspended), then check TASK_HISTORY/SCD2 apply audit. If stream has no pending data, resume alone cannot recover historic changes: inspect SCD2 bootstrap/backfill and stream creation order, apply a targeted guarded backfill if appropriate. No unverified success claim. Idempotency deliberately deferred.
