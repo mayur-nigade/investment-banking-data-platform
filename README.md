@@ -41,7 +41,9 @@ Synthetic trade / client / account / instrument sources
 | dbt source cutover to Iceberg | **Planned** | Source definitions updated in GitHub; workspace build not confirmed |
 | Snowflake append-only stream | User reports created | Stream starts from creation offset; no historical replay |
 | Current trade-state CDC bootstrap & Task | **End-to-end verified** | Triggered task SUCCEEDED; user confirms new trade reached GOLD.CURRENT_TRADES |
-| Snowpipe auto-ingestion / SCD2 | Planned | Not implemented yet |
+| SCD2 history VIEW + dbt equivalent | Planned | Learning path; history derived at query time |
+| SCD2 physical table + incremental task | Planned | Separate native table; bootstrap + stored procedure + independent stream code committed |
+| Snowpipe auto-ingestion | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files were successfully loaded into Iceberg Bronze (392 rows, zero COPY errors); older Parquet copies of historical CSV batches are not reloaded. The expected total is 2,096, with post-load count checks reported complete by the user but no numeric result pasted.
 
@@ -67,6 +69,8 @@ Synthetic trade / client / account / instrument sources
 - [`sql/scd2/06_trade_history_from_events.sql`](sql/scd2/06_trade_history_from_events.sql) — **planned** SCD2-style historical timeline VIEW from preserved trade events
 - [`dbt/models/marts/fct_trade_state_history.sql`](dbt/models/marts/fct_trade_state_history.sql) — **planned** dbt version-history model using ref()
 - [`dbt/tests/assert_single_current_trade_version.sql`](dbt/tests/assert_single_current_trade_version.sql) — **planned** singular version integrity test
+- [`sql/scd2/07_physical_scd2_bootstrap.sql`](sql/scd2/07_physical_scd2_bootstrap.sql) — **planned** separate native Gold SCD2 history table, state-change filtering and independent Iceberg stream
+- [`sql/scd2/08_incremental_physical_scd2_task.sql`](sql/scd2/08_incremental_physical_scd2_task.sql) — **planned** transactional incremental history maintenance with durable reject/run audit
 
 ## Key design decisions
 
