@@ -17,9 +17,11 @@
 | Parquet 392-row batch → Iceberg COPY, full metadata | [sql/iceberg/02_load_new_trade_parquet_batch.sql](../sql/iceberg/02_load_new_trade_parquet_batch.sql) |
 | Gold current trade state initial bootstrap (planned) | [sql/cdc/03_bootstrap_current_trades.sql](../sql/cdc/03_bootstrap_current_trades.sql) |
 | Triggered append-only stream CDC MERGE task (planned) | [sql/cdc/04_triggered_trade_cdc_task.sql](../sql/cdc/04_triggered_trade_cdc_task.sql) |
-| End-to-end triggered CDC smoke test (planned) | [sql/cdc/05_triggered_cdc_smoke_test.sql](../sql/cdc/05_triggered_cdc_smoke_test.sql) |
+| End-to-end triggered CDC smoke test (**verified**) | [sql/cdc/05_triggered_cdc_smoke_test.sql](../sql/cdc/05_triggered_cdc_smoke_test.sql) |
+| SCD2 history VIEW over event log (planned) | [sql/scd2/06_trade_history_from_events.sql](../sql/scd2/06_trade_history_from_events.sql) |
+| dbt version-history model and test (planned) | [dbt/models/marts/fct_trade_state_history.sql](../dbt/models/marts/fct_trade_state_history.sql) / [assert_single_current_trade_version.sql](../dbt/tests/assert_single_current_trade_version.sql) |
 
-The end-to-end test is a synthetic event, not yet executed. Expected evidence: INSERT=1, task SUCCEEDED/TRIGGER, Gold active trade.
+The end-to-end synthetic CDC test was executed: task history showed SUCCEEDED/TRIGGER and the user confirmed the trade appeared in Gold.
 The repository is the source of truth for code and version history. Notion contains explanations and links. Status labels **VERIFIED / CAPTURED / PLANNED** should be preserved.
 
 ## Task concepts reference
