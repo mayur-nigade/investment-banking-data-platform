@@ -50,6 +50,7 @@ Synthetic trade / client / account / instrument sources
 ## Repository contents
 
 - [`docs/architecture.md`](docs/architecture.md) — proposed architecture, layers, and implementation constraints
+- [`docs/idempotency_and_replay_design.md`](docs/idempotency_and_replay_design.md) — file-level vs event-level deduplication, identified gaps, replay-safety design and SQL diagnostics
 - [`docs/iceberg_aws_setup.md`](docs/iceberg_aws_setup.md) — complete AWS IAM + Iceberg external-volume implementation runbook (planned)
 - [`sql/iceberg/01_external_volume_and_backfill.sql`](sql/iceberg/01_external_volume_and_backfill.sql) — verified historical CTAS pattern and reconciliation SQL
 - [`sql/iceberg/02_load_new_trade_parquet_batch.sql`](sql/iceberg/02_load_new_trade_parquet_batch.sql) — **next planned** load of 392 new Parquet events with source metadata
