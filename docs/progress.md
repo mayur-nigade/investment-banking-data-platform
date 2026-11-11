@@ -305,3 +305,20 @@ If all/most reject, inspect one Bronze sample and the rejection reason, then use
 **Likely diagnosis, not yet proven:** `trade_settlements_001.parquet` uses a different payload/schema or carries NULL, zero or nonnumeric `quantity`; our trade-event COPY maps `$1:quantity` and dbt rejects `TRY_TO_NUMBER(QUANTITY) IS NULL OR <=0`. No Parquet schema/sample was supplied to establish which of these cases occurred.
 
 **Fast-track next action:** Choose **one new genuine `trade_events_*.parquet` file** from the user's November 5 batch (only if it contains the expected 14 fields and not-yet-ingested EVENT_IDs), upload to `s3://omera-ib-trade-lake/landingzone/parquet/auto/`. Then check only that file's valid/rejected counts and one Gold current-trade row; do not replay/rename the settlement file. A future settlement data flow should have its own stage schema/pipe/table/DQ contract. File/event-level idempotency implementation stays deferred by user request.
+
+## 2026-11-11 — Second Parquet also has all-NULL quantity; schema diagnosis pending
+
+**User reports:** Quantity is `NULL` for all rows in a second uploaded Parquet file as well. The first auto-prefix file, `trade_settlements_001.parquet`, loaded 403 Bronze rows but all 403 were rejected as `INVALID_QUANTITY`. The second file's name, row count, and original payload have **not** been provided; do not assume its precise schema or other DQ results.
+
+**Next diagnostic proposed (not yet executed):** Inspect original file fields, not only transformed Bronze, through:
+```sql
+SELECT METADATA$FILENAME AS SOURCE_FILE,
+       OBJECT_KEYS(t.$1) AS AVAILABLE_COLUMNS,
+       t.$1:quantity AS LOWERCASE_QUANTITY,
+       t.$1:QUANTITY AS UPPERCASE_QUANTITY,
+       t.$1 AS FULL_RECORD
+FROM @IB_LAB.RAW.IB_S3_STAGE/parquet/auto/
+    (FILE_FORMAT => 'IB_LAB.RAW.IB_PARQUET_FORMAT') t
+LIMIT 5;
+```
+Case-sensitive `t.$1:quantity` may miss uppercase/nested/renamed fields; settlement files may simply have different data contracts. If original `quantity` is genuinely NULL in every record, the correct action is not to relax quantity DQ: choose a synthetic `trade_events` file with correct 14-field schema and positive numeric quantity. Stop uploading additional files pending schema diagnosis. Gold/SCD2 propagation for these files remains unverified.
