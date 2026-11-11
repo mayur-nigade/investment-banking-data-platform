@@ -220,3 +220,21 @@ Official references:
 **Caveats:** A derived view is **not a separately materialized SCD2 dimension table**. It recomputes from source events on query and reflects new source events automatically. Version order is based on per-TRADE_ID increasing `SOURCE_SEQUENCE`; timestamp-based validity intervals require EVENT_TS to be monotonic with the sequence, or use numeric sequence boundaries. A traditional mutable-source SCD2 can use dbt snapshots (not needed to reconstruct already-preserved events). SCD2 SQL and tests are committed but **not yet executed** in Snowflake.
 
 **Next action:** Run just the SCD2 SQL view script or its dbt equivalent and view one multi-version trade. Then advance to Snowpipe/CDC architecture and performance tuning.
+
+## 2026-11-11 — Dual-path SCD2 selected; physical Gold architecture committed (PLANNED)
+
+**User decision:** Implement two distinct patterns for interview-ready learning: **(a)** a derived SCD2 history VIEW over the existing validated Iceberg event log, **(b)** a separate physically persisted Gold SCD2 history table with change-detection and incremental maintenance. Keep `GOLD.CURRENT_TRADES` untouched for latest-state queries.
+
+**New code, not yet executed:**
+- [07_physical_scd2_bootstrap.sql](../sql/scd2/07_physical_scd2_bootstrap.sql): creates a **separate** `TRADE_EVENTS_SCD2_STREAM` before bootstrap, derives `V_TRADE_SCD2_DESIRED` from `DBT_DEV.INT_VALID_TRADES`, uses SHA-256 fingerprints over tracked business attributes + deletion flag to suppress no-op event versions, creates `GOLD.TRADE_SCD2_HISTORY` and persistent reject/run audit tables, performs guarded one-time historical load.
+- [08_incremental_physical_scd2_task.sql](../sql/scd2/08_incremental_physical_scd2_task.sql): creates Snowflake SQL stored procedure `SP_APPLY_TRADE_SCD2()` that consumes new events through a **dedicated** append-only Iceberg stream, captures invalid event identifiers in `SCD2_REJECT_AUDIT`, reconstitutes the **entire version chain only for touched valid TRADE_IDs** to handle late-arriving sequences, and atomically DELETEs+INSERTs these histories with one BEGIN TRANSACTION / COMMIT. Rollback preserves the stream offset if failure. Defines an event-triggered `APPLY_TRADE_SCD2_TASK` but leaves it **SUSPENDED** until manual acceptance.
+
+**Key differences / safeguards:**
+1. VIEW is computed upon each SELECT, version per valid event (including no-op updates); PHYSICAL table stores changed-business-state versions only, tracked by SHA-256 digest.
+2. Multiple consumers need independent stream offsets. Never share `TRADE_EVENTS_APPEND_STREAM` with SCD2 task.
+3. SCD2 uses `SOURCE_SEQUENCE` as authoritative version ordering; `EVENT_TS` validity windows are trustworthy only if timestamps increase along the sequence.
+4. D events are stored as deletion tombstone states. They must be sufficiently complete to pass the current dbt DQ filters (current lab assumes full row images).
+5. Transactional atomicity covers stream consume, reject records, physical history changes, and success audit. Failure/error history is observable through Snowflake TASK_HISTORY. No real account credentials are committed.
+6. **Production-style reference design, not yet production-certified.** Before real deployment: schema contracts, sequence collision detection, bitemporal rules, permissions, idempotency concurrency tests, monitoring, task costs, operational recovery, and scale/performance must be verified.
+
+**Next user action:** execute ONLY script 07 in Snowflake and verify one current history version per TRADE_ID; keep 08 untouched until bootstrap succeeds. No historical RAW/Iceberg counts need repeating.
