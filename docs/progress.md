@@ -273,3 +273,9 @@ Official references:
 **Next external steps**: User runs SQL pipe definition, copies actual SQS ARN from `DESC PIPE`, creates S3 bucket event notification, uploads one **new** synthetically generated Parquet file with valid client and new event/trade IDs. Validate with `SYSTEM$PIPE_STATUS` + one target `SOURCE_FILE` query. The already-running current-state task should then react; physical SCD2 task must be RESUMED separately if created.
 
 **Status:** Prepared in GitHub/Notion only. No Snowpipe pipe, AWS S3 event rule, or auto-loaded file confirmed. Existing raw and Bronze history must not be replayed merely to prove automation.
+
+## 2026-11-11 — Snowpipe explanation and quick interview notes saved
+
+Dedicated [Notion Snowpipe revision page](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) now covers architecture, strengths/limits, comparison with COPY and Streaming, modern fixed credits/GB, file metadata and pause retention (14 days), REFRESH (7 days), troubleshooting and 15 interview questions with short answers. Confirmed against Snowflake official docs.
+
+**Important SQL fix:** Original prepared pipe used `ON_ERROR=ABORT_STATEMENT`, a bulk-COPY-only option unsupported inside Snowpipe. Corrected [09 Snowpipe SQL](../sql/snowpipe/09_s3_auto_ingest_to_iceberg.sql) to `ON_ERROR=SKIP_FILE`; made equivalent correction in Notion Section 22. No evidence user already executed original SQL. Pipe creation and AWS notification still not verified.
