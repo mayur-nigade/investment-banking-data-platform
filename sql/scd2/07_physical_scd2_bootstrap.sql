@@ -15,6 +15,8 @@
 -- This lab's physical history creates a new SCD2 row only when one of our
 -- TRACKED business attributes changes (including IS_DELETED).
 -- Identical U/retry events are not new physical SCD2 versions.
+-- SHA-256 hashes a stable ordered array of tracked typed values, including
+-- the soft-delete indicator. This is a change-detection signature, NOT a key.
 -- Event ID replays are deduplicated by latest INGESTED_AT / file tie-break.
 -- SOURCE_SEQUENCE is the ordering authority; EVENT_TS intervals are
 -- meaningful as business-valid time only if timestamps are monotonic.
@@ -38,10 +40,15 @@ WITH deduplicated_events AS (
         QUANTITY, PRICE, TRADE_CURRENCY, TRADE_DATE,
         SOURCE_FILE, FILE_ROW_NUMBER, INGESTED_AT,
         (EVENT_TYPE = 'D') AS IS_DELETED,
-        HASH(
-            CLIENT_ID, ACCOUNT_ID, INSTRUMENT_ID, SIDE,
-            QUANTITY, PRICE, TRADE_CURRENCY, TRADE_DATE,
-            (EVENT_TYPE = 'D')
+        SHA2_HEX(
+            TO_JSON(
+                ARRAY_CONSTRUCT(
+                    CLIENT_ID, ACCOUNT_ID, INSTRUMENT_ID, SIDE,
+                    QUANTITY, PRICE, TRADE_CURRENCY, TRADE_DATE,
+                    (EVENT_TYPE = 'D')
+                )
+            ),
+            256
         ) AS ATTR_HASH
     FROM IB_LAB.DBT_DEV.INT_VALID_TRADES
     WHERE EVENT_ID IS NOT NULL
@@ -127,7 +134,7 @@ CREATE TABLE IF NOT EXISTS IB_LAB.GOLD.TRADE_SCD2_HISTORY (
     VALID_TO_TS_EXCLUSIVE TIMESTAMP_NTZ,
     IS_CURRENT BOOLEAN,
     IS_DELETED BOOLEAN,
-    ATTR_HASH NUMBER(38,0),
+    ATTR_HASH VARCHAR(64),
     SOURCE_FILE VARCHAR,
     INGESTED_AT TIMESTAMP_LTZ,
     PUBLISHED_AT TIMESTAMP_LTZ DEFAULT CURRENT_TIMESTAMP()
