@@ -33,3 +33,7 @@ The repository is the source of truth for code and version history. Notion conta
 ## Task concepts reference
 
 The [triggered CDC task SQL](../sql/cdc/04_triggered_trade_cdc_task.sql) demonstrates `CREATE TASK IF NOT EXISTS`, `WAREHOUSE` (user-managed compute), `WHEN SYSTEM$STREAM_HAS_DATA('<stream>')` (event trigger, not a SCHEDULE), `AS MERGE` (the transactional stream consumer), and `ALTER TASK ... RESUME`. User reported task creation on 2026-11-10; STARTED state and task execution are not yet verified. Full instructional notes: [Notion query reference](https://app.notion.com/p/4127b5a3502e814eb844dd73e0868159).
+
+## Snowpipe interview revision notes
+
+[Snowpipe — Senior Data Engineer Interview Quick Revision](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) (standalone Notion page): definition, S3 → SQS → PIPE → Iceberg architecture, COPY vs Snowpipe vs Streaming, advantages, disadvantages, 14-day file metadata, REFRESH 7 days, error handling, 2026 credit-per-GB cost, troubleshooting SQL, 15 interview Q&A. Snowpipe pipeline SQL was corrected to `ON_ERROR=SKIP_FILE` (not `ABORT_STATEMENT`).
