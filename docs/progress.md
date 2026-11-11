@@ -208,3 +208,15 @@ Official references:
 - https://docs.snowflake.com/en/sql-reference/functions/task_history
 - https://docs.snowflake.com/en/sql-reference/functions/system_stream_has_data
 - https://docs.snowflake.com/en/user-guide/streams-manage
+
+## 2026-11-11 — End-to-end CDC Gold trade verified; SCD2 lesson prepared
+
+**Verified from user:** The new synthetic CDC trade **is present in `IB_LAB.GOLD.CURRENT_TRADES`** after the previously observed triggered `APPLY_TRADE_CDC_TASK` `SUCCEEDED`. Together with the one-event Iceberg INSERT, this closes the **Iceberg → append-only stream → triggered Task → Gold current-state** smoke test. Exact Gold column values were not pasted; do not claim additional field-level checks.
+
+**Next: SCD Type 2 from event-sourced history (PLANNED, not yet executed):**
+- [06_trade_history_from_events.sql](../sql/scd2/06_trade_history_from_events.sql) creates `IB_LAB.GOLD.V_TRADE_SCD2_HISTORY` as a derived VIEW over `IB_LAB.DBT_DEV.INT_VALID_TRADES`. Uses `ROW_NUMBER` to dedupe EVENT_IDs and enumerate versions within TRADE_ID, `LEAD` to identify next sequence and timestamp, `IS_CURRENT` for latest event, `IS_DELETED` as tombstone. The event feed is already persisted in Iceberg; no need to replay the existing stream.
+- [dbt model](../dbt/models/marts/fct_trade_state_history.sql) offers equivalent dbt `ref('int_valid_trades')` view, with [singular test](../dbt/tests/assert_single_current_trade_version.sql) enforcing one current version per trade.
+
+**Caveats:** A derived view is **not a separately materialized SCD2 dimension table**. It recomputes from source events on query and reflects new source events automatically. Version order is based on per-TRADE_ID increasing `SOURCE_SEQUENCE`; timestamp-based validity intervals require EVENT_TS to be monotonic with the sequence, or use numeric sequence boundaries. A traditional mutable-source SCD2 can use dbt snapshots (not needed to reconstruct already-preserved events). SCD2 SQL and tests are committed but **not yet executed** in Snowflake.
+
+**Next action:** Run just the SCD2 SQL view script or its dbt equivalent and view one multi-version trade. Then advance to Snowpipe/CDC architecture and performance tuning.
