@@ -123,3 +123,7 @@ The original synthetic November 5 batch includes **settlement** files but no tra
 - Upload downloaded Parquet ONCE to `s3://omera-ib-trade-lake/landingzone/parquet/auto/`. Do not manual COPY.
 - Expected after Snowpipe + dbt + resumed tasks: Bronze 6 new records; valid 6; rejected 0; current Gold has five LABTRD records, with first trade seq2/price71.5000; physical SCD2 has two versions for that trade (if task active).
 - Keep settlement files out of this pipeline; avoid replays until idempotency controls are added.
+
+### 2026-11-11 execution note
+
+**User reports Snowpipe executed** after the six-row trade-events Parquet handoff. The earlier 403-row settlement file had confirmed source-domain DQ failure; it is not a Gold test. The new six-row Parquet source-file arrival and Gold output remain unverified in the current conversation. **Next** check only `GOLD.CURRENT_TRADES` (five `LABTRD20261111%` trades; first source sequence 2 at 71.5000) and `GOLD.TRADE_SCD2_HISTORY` (first trade two physical versions and one current). If either missing, inspect only new file's dbt valid/rejected counts and task STARTED state.
