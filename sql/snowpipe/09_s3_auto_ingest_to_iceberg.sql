@@ -16,6 +16,9 @@
 -- No WAREHOUSE option: standard Snowpipe file ingest uses serverless compute.
 -- The S3 notification must still be configured in the AWS console.
 -- NO PURGE (not supported for Snowpipe pipe COPY); source files remain in S3.
+-- Snowpipe does NOT support ON_ERROR=ABORT_STATEMENT (bulk COPY does).
+-- ON_ERROR=SKIP_FILE is the Snowpipe default; we set it explicitly so a
+-- malformed file fails as a unit but does not block unrelated good files.
 -- NO FORCE=TRUE / NO manual second COPY on files delivered to this pipe.
 
 -- Step 1: Create the pipe once. USE same field mapping as proven manual COPY.
@@ -53,7 +56,7 @@ FROM (
 )
 FILE_FORMAT = (FORMAT_NAME = 'IB_LAB.RAW.IB_PARQUET_FORMAT')
 LOAD_MODE = FULL_INGEST
-ON_ERROR = ABORT_STATEMENT;
+ON_ERROR = SKIP_FILE;
 
 -- Step 2: Copy the actual Snowflake-managed SQS queue ARN from
 -- the 'notification_channel' field in this output.
