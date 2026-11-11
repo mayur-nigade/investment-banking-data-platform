@@ -322,3 +322,11 @@ FROM @IB_LAB.RAW.IB_S3_STAGE/parquet/auto/
 LIMIT 5;
 ```
 Case-sensitive `t.$1:quantity` may miss uppercase/nested/renamed fields; settlement files may simply have different data contracts. If original `quantity` is genuinely NULL in every record, the correct action is not to relax quantity DQ: choose a synthetic `trade_events` file with correct 14-field schema and positive numeric quantity. Stop uploading additional files pending schema diagnosis. Gold/SCD2 propagation for these files remains unverified.
+
+## 2026-11-11 — Root cause VERIFIED: settlement schema routed into trade-event Snowpipe
+
+**Direct user-provided Parquet source inspection:** `landingzone/parquet/auto/trade_settlements_001.parquet` contains these exact keys: `custodian`, `settled_amount`, `settlement_currency`, `settlement_date`, `settlement_id`, `settlement_status`, `settlement_ts`, `trade_id`. Sample rows include `settlement_id='SET0000001'`, `trade_id='TRD0000024'`, `settled_amount='12069780.00'`, `settlement_currency='USD'`, `settlement_status='SETTLED'`. **There is no quantity field of any casing, and no trade-event field set.** This definitively explains the 403 `INVALID_QUANTITY` DQ rejects: wrong source-domain file, not a numeric parsing or column-case bug.
+
+**Correction for next fast-track step:** Leave trade-event pipe and DQ unchanged. Send a previously-uningested true `trade_events_*.parquet` file with the 14 known fields and valid positive quantity to monitored prefix `s3://omera-ib-trade-lake/landingzone/parquet/auto/`. Verify one new source file in Bronze, valid records via dbt, then one event in Gold CURRENT_TRADES and physical SCD2 (if task active). Do not upload more settlement files to this trade-event path. Future production hardening: separate S3 prefixes/notification filters/pipes and Bronze settlement table to enforce data-domain routing. Existing 403 bad-domain Bronze rows remain and should be quarantined/cleaned under a controlled remediation plan (not blindly deleted while consumers run).
+
+**Status discipline:** Actual source schema diagnosis and 403 DQ rejects verified. Successful Snowpipe-to-Gold processing of a new valid trade-event file remains unverified. User asked to finish pipeline quickly before idempotency implementation.
