@@ -32,3 +32,9 @@ source('ib_raw','RAW_TRADE_EVENTS') ----------> stg_trade_events
 - Snowflake-native: compare these files to the project in Snowflake Workspaces; run the models and tests there.
 - dbt Core local use: `dbt_project.yml` is a starter configuration. Create a secure local Snowflake profile outside the repository or use environment variables; then `dbt run`, `dbt test`. Snowflake permissions/warehouse/database must be set for the target.
 - Look at [trade DQ diagnostics](../sql/quality/02_trade_dq_diagnostics.sql) and [count reconciliation](../sql/quality/01_trade_reconciliation.sql) for verification SQL.
+
+## SCD Type 2-style history (next hands-on)
+
+The [event-sourced historical model](models/marts/fct_trade_state_history.sql) and [one-current-version test](tests/assert_single_current_trade_version.sql) are now versioned but **not executed** in the user's live Snowflake Workspaces project. The model is a **view**: it reconstructs earlier and latest versions from append-only trade events, rather than writing a conventional, physical SCD2 dimension table. Source sequence is authoritative; use event timestamp-based AS-OF analysis only if timestamps are monotonic per trade.
+
+To build in Snowflake's dbt Workspaces project, copy the new model and test into the authoritative project and run `dbt build --select +fct_trade_state_history`. Alternatively execute the standalone [Gold history-view SQL](../sql/scd2/06_trade_history_from_events.sql) from a Snowflake worksheet. Use one of the two routes rather than conflating them. This fast-track approach illustrates `ROW_NUMBER`, `LEAD`, `IS_CURRENT`, and delete tombstones without a second stream.
