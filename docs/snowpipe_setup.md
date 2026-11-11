@@ -113,3 +113,13 @@ The user queried `INT_REJECTED_TRADES` and confirmed **all 403** rows of `trade_
 **Exact source keys:** `custodian`, `settled_amount`, `settlement_currency`, `settlement_date`, `settlement_id`, `settlement_status`, `settlement_ts`, `trade_id`. This is a **settlement** record structure, not trade-event data. No `quantity` field is present. The trade-event pipe's `t.$1:quantity` therefore maps `NULL`, and all **403** records are rejected by trade-event dbt DQ as `INVALID_QUANTITY`.
 
 **Immediate plan:** Use one genuine 14-field `trade_events_*.parquet` file with new event IDs under `landingzone/parquet/auto/`; do not change the working Snowpipe code or loosen DQ. The 403 wrong-domain records are in Bronze and require a later deliberate quarantine/cleanup (do not drop or delete casually). Separate settlement prefix and dedicated settlement schema/pipe/table is recommended later, outside this trade-event pipeline completion scope.
+
+## Ready-made synthetic trade-events file for end-to-end auto-ingest test
+
+The original synthetic November 5 batch includes **settlement** files but no trade-event files. A fresh six-row Parquet was generated locally and linked to the user in chat: `trade_events_snowpipe_20261111_001.parquet`. It has 14 lowercase trade-event columns, five fresh `I` trades and one `U` price change, with client/account/instrument references taken from the synthetic starter dataset. **Locally checked Parquet structure**; target Snowflake import not yet verified.
+
+- [Reproducible Python generator](../scripts/generate_snowpipe_trade_events.py) (requires `pyarrow` if user wants to generate another equivalent file on a PC).
+- [Single final SQL test](../sql/snowpipe/10_verify_generated_trade_events.sql).
+- Upload downloaded Parquet ONCE to `s3://omera-ib-trade-lake/landingzone/parquet/auto/`. Do not manual COPY.
+- Expected after Snowpipe + dbt + resumed tasks: Bronze 6 new records; valid 6; rejected 0; current Gold has five LABTRD records, with first trade seq2/price71.5000; physical SCD2 has two versions for that trade (if task active).
+- Keep settlement files out of this pipeline; avoid replays until idempotency controls are added.
