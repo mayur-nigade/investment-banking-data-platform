@@ -40,7 +40,7 @@ Synthetic trade / client / account / instrument sources
 | Five-file Parquet batch ingestion to Iceberg | Completed | Five files, 392 rows loaded, 0 reported errors |
 | dbt source cutover to Iceberg | **Planned** | Source definitions updated in GitHub; workspace build not confirmed |
 | Snowflake append-only stream | User reports created | Stream starts from creation offset; no historical replay |
-| Current trade-state CDC bootstrap & Task | Task created (user-reported) | Task STARTED state and CDC execution not yet confirmed |
+| Current trade-state CDC bootstrap & Task | **End-to-end verified** | Triggered task SUCCEEDED; user confirms new trade reached GOLD.CURRENT_TRADES |
 | Snowpipe auto-ingestion / SCD2 | Planned | Not implemented yet |
 
 **Important:** The five November 3 Parquet files were successfully loaded into Iceberg Bronze (392 rows, zero COPY errors); older Parquet copies of historical CSV batches are not reloaded. The expected total is 2,096, with post-load count checks reported complete by the user but no numeric result pasted.
@@ -63,7 +63,10 @@ Synthetic trade / client / account / instrument sources
 - [`dbt/README.md`](dbt/README.md) — model lineage, run instructions and code provenance
 - [`sql/cdc/03_bootstrap_current_trades.sql`](sql/cdc/03_bootstrap_current_trades.sql) — **planned** one-time Gold current-state bootstrap using the latest valid event per trade
 - [`sql/cdc/04_triggered_trade_cdc_task.sql`](sql/cdc/04_triggered_trade_cdc_task.sql) — **created (user-reported)** Iceberg stream-triggered MERGE task for future I/U/D events
-- [`sql/cdc/05_triggered_cdc_smoke_test.sql`](sql/cdc/05_triggered_cdc_smoke_test.sql) — **planned** one-event end-to-end CDC smoke test with task history and Gold validation
+- [`sql/cdc/05_triggered_cdc_smoke_test.sql`](sql/cdc/05_triggered_cdc_smoke_test.sql) — **verified** one-event CDC test with task history and Gold arrival
+- [`sql/scd2/06_trade_history_from_events.sql`](sql/scd2/06_trade_history_from_events.sql) — **planned** SCD2-style historical timeline VIEW from preserved trade events
+- [`dbt/models/marts/fct_trade_state_history.sql`](dbt/models/marts/fct_trade_state_history.sql) — **planned** dbt version-history model using ref()
+- [`dbt/tests/assert_single_current_trade_version.sql`](dbt/tests/assert_single_current_trade_version.sql) — **planned** singular version integrity test
 
 ## Key design decisions
 
