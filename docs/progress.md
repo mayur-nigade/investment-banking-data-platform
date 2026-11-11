@@ -297,3 +297,11 @@ FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
 WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet';
 ```
 If all/most reject, inspect one Bronze sample and the rejection reason, then use an actual trade-event Parquet file with new EVENT_IDs. **Do not repeat historical 1704/392 checks.** Physical SCD2 procedure/table created per user; SCD2 task STARTED and Gold arrival of this 403-row file remain unverified. Idempotency hardening deferred until full pipeline completed.
+
+## 2026-11-11 — 403 settlement-named Parquet records all rejected: INVALID_QUANTITY
+
+**New user-confirmed DQ result:** All **403** Iceberg Bronze records sourced from `landingzone/parquet/auto/trade_settlements_001.parquet` were rejected by dbt with `REJECTION_REASON='INVALID_QUANTITY'`. Thus the file landed, but **zero valid trade-event records from this file** are eligible for Gold CDC/SCD2. Snowpipe's successful file load is not evidence that record-level business contracts passed.
+
+**Likely diagnosis, not yet proven:** `trade_settlements_001.parquet` uses a different payload/schema or carries NULL, zero or nonnumeric `quantity`; our trade-event COPY maps `$1:quantity` and dbt rejects `TRY_TO_NUMBER(QUANTITY) IS NULL OR <=0`. No Parquet schema/sample was supplied to establish which of these cases occurred.
+
+**Fast-track next action:** Choose **one new genuine `trade_events_*.parquet` file** from the user's November 5 batch (only if it contains the expected 14 fields and not-yet-ingested EVENT_IDs), upload to `s3://omera-ib-trade-lake/landingzone/parquet/auto/`. Then check only that file's valid/rejected counts and one Gold current-trade row; do not replay/rename the settlement file. A future settlement data flow should have its own stage schema/pipe/table/DQ contract. File/event-level idempotency implementation stays deferred by user request.
