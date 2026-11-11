@@ -261,3 +261,15 @@ Official references:
 5. One end-to-end demonstration: new landing object → Snowpipe → Iceberg → Streams/Tasks → Gold current + persisted SCD2. The existing 1704/392 historical counts will NOT be repeatedly retested.
 
 **Definition of done:** show one new, clean trade I/U event passing both Gold paths and an automatically triggered file ingestion; record execution evidence. Only then return to idempotency and operational hardening. Do not claim this is already done.
+
+## 2026-11-11 — Snowpipe auto-ingest implementation prepared (NOT YET EXECUTED)
+
+**User request / priority:** Finish the full pipeline quickly, defer file/record idempotency design. User reports completing **physical SCD2 table and incremental stored procedure**. This is user-reported; the SCD2 triggered task's STARTED state and actual run are not confirmed.
+
+**Committed Snowpipe assets**:
+- [09_s3_auto_ingest_to_iceberg.sql](../sql/snowpipe/09_s3_auto_ingest_to_iceberg.sql): `CREATE PIPE IF NOT EXISTS IB_LAB.BRONZE.TRADE_EVENTS_AUTO_PIPE AUTO_INGEST=TRUE AS COPY INTO IB_LAB.BRONZE.RAW_TRADE_EVENTS_ICEBERG`, preserving 14 incoming Parquet fields + 3 file metadata columns; Iceberg `FULL_INGEST`; no `PURGE`; no `FORCE`; serverless Snowpipe.
+- [S3 → SQS → Snowpipe setup runbook](snowpipe_setup.md): `DESC PIPE` yields the real SQS queue ARN; configure AWS bucket `omera-ib-trade-lake` S3 notification with prefix `landingzone/parquet/auto/`, suffix `.parquet`, all object-create events, SQS destination. Use a new path `@IB_LAB.RAW.IB_S3_STAGE/parquet/auto/` to avoid reprocessing the previously loaded `parquet/batches/` files.
+
+**Next external steps**: User runs SQL pipe definition, copies actual SQS ARN from `DESC PIPE`, creates S3 bucket event notification, uploads one **new** synthetically generated Parquet file with valid client and new event/trade IDs. Validate with `SYSTEM$PIPE_STATUS` + one target `SOURCE_FILE` query. The already-running current-state task should then react; physical SCD2 task must be RESUMED separately if created.
+
+**Status:** Prepared in GitHub/Notion only. No Snowpipe pipe, AWS S3 event rule, or auto-loaded file confirmed. Existing raw and Bronze history must not be replayed merely to prove automation.
