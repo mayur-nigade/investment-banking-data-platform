@@ -81,3 +81,9 @@ The user reports having created the physical SCD2 stored procedure and table, bu
 - https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro
 - https://docs.snowflake.com/en/sql-reference/sql/create-pipe
 - https://docs.snowflake.com/en/user-guide/tables-iceberg-load
+
+## 2026-11-11 correction and quick reference
+
+**Snowpipe's pipe COPY does NOT support `ON_ERROR=ABORT_STATEMENT`.** The prepared SQL has been corrected to `ON_ERROR=SKIP_FILE`, its supported default (bad file skipped, other files continue). Do not use the original bulk-COPY option in a pipe. Also unlike older explanations, current Snowpipe billing is fixed credits per GB of loaded data, not a per-file charge; binary Parquet files are billed on observed size. Read the [Notion Snowpipe Interview Quick Revision](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) for concise architecture, 15 Q&A, cost and operational limits.
+
+Official: https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro ; https://docs.snowflake.com/en/user-guide/data-load-snowpipe-billing .
