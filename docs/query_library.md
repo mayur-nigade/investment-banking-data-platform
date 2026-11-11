@@ -20,6 +20,8 @@
 | End-to-end triggered CDC smoke test (**verified**) | [sql/cdc/05_triggered_cdc_smoke_test.sql](../sql/cdc/05_triggered_cdc_smoke_test.sql) |
 | SCD2 history VIEW over event log (planned) | [sql/scd2/06_trade_history_from_events.sql](../sql/scd2/06_trade_history_from_events.sql) |
 | dbt version-history model and test (planned) | [dbt/models/marts/fct_trade_state_history.sql](../dbt/models/marts/fct_trade_state_history.sql) / [assert_single_current_trade_version.sql](../dbt/tests/assert_single_current_trade_version.sql) |
+| Physical SCD2 Gold bootstrap + dedicated stream (planned) | [sql/scd2/07_physical_scd2_bootstrap.sql](../sql/scd2/07_physical_scd2_bootstrap.sql) |
+| Transactional incremental SCD2 stored procedure + triggered task (planned) | [sql/scd2/08_incremental_physical_scd2_task.sql](../sql/scd2/08_incremental_physical_scd2_task.sql) |
 
 The end-to-end synthetic CDC test was executed: task history showed SUCCEEDED/TRIGGER and the user confirmed the trade appeared in Gold.
 The repository is the source of truth for code and version history. Notion contains explanations and links. Status labels **VERIFIED / CAPTURED / PLANNED** should be preserved.
