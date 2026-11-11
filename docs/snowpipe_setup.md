@@ -87,3 +87,17 @@ The user reports having created the physical SCD2 stored procedure and table, bu
 **Snowpipe's pipe COPY does NOT support `ON_ERROR=ABORT_STATEMENT`.** The prepared SQL has been corrected to `ON_ERROR=SKIP_FILE`, its supported default (bad file skipped, other files continue). Do not use the original bulk-COPY option in a pipe. Also unlike older explanations, current Snowpipe billing is fixed credits per GB of loaded data, not a per-file charge; binary Parquet files are billed on observed size. Read the [Notion Snowpipe Interview Quick Revision](https://app.notion.com/p/4157b5a3502e812aa436c84b08fdbeae) for concise architecture, 15 Q&A, cost and operational limits.
 
 Official: https://docs.snowflake.com/en/user-guide/data-load-snowpipe-intro ; https://docs.snowflake.com/en/user-guide/data-load-snowpipe-billing .
+
+## Observed incoming file — 2026-11-11
+
+**User verification:** `landingzone/parquet/auto/trade_settlements_001.parquet` appeared in the Iceberg target with **403 rows**. This is evidence of target file arrival under the monitored prefix, but **not yet proof of downstream DQ and Gold states**. The file is named *trade_settlements*, while our pipe maps *trade_events* fields. Inspect only the 403 rows' dbt valid/rejected counts before assuming a successful CDC/SCD2 run. If the Parquet schema is settlement-specific, use a genuine trade-event Parquet with expected 14 keys instead.
+
+```sql
+SELECT 'VALID' AS STATUS, COUNT(*) AS RECORDS
+FROM IB_LAB.DBT_DEV.INT_VALID_TRADES
+WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet'
+UNION ALL
+SELECT 'REJECTED', COUNT(*)
+FROM IB_LAB.DBT_DEV.INT_REJECTED_TRADES
+WHERE SOURCE_FILE LIKE '%trade_settlements_001.parquet';
+```
