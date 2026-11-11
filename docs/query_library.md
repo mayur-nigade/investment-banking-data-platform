@@ -49,3 +49,9 @@ The [triggered CDC task SQL](../sql/cdc/04_triggered_trade_cdc_task.sql) demonst
 **Raw Parquet keys verified:** `custodian`, `settled_amount`, `settlement_currency`, `settlement_date`, `settlement_id`, `settlement_status`, `settlement_ts`, `trade_id`. There is **no `quantity` key**. The trade-event Snowpipe mapping targets a 14-field trade-event schema, so 403 settlement records landed in Bronze with NULL quantity and were rejected by dbt `INVALID_QUANTITY`. Correct diagnosis is **wrong-domain file routing / missing fields** (not source data containing invalid numeric quantity).
 
 Keep trade-event mapping, upload genuine `trade_events_*.parquet` to auto-prefix, then validate new source file + Gold. Longer term, separate trade and settlement S3 prefixes and ingestion contracts. Don't assume Snowpipe's successful file ingest implies DQ compliance.
+
+## Fresh synthetic trade events for Snowpipe end-to-end completion
+
+- Generator: [scripts/generate_snowpipe_trade_events.py](../scripts/generate_snowpipe_trade_events.py), produces `trade_events_snowpipe_20261111_001.parquet` with six business events (five inserts, one update).
+- Single validation script: [sql/snowpipe/10_verify_generated_trade_events.sql](../sql/snowpipe/10_verify_generated_trade_events.sql), targeted Iceberg/dbt/Gold/SCD2 evidence.
+- Status: locally generated and structurally validated, **not yet uploaded or verified in Snowflake**. The November 5 source files were settlements, not trade-events.
