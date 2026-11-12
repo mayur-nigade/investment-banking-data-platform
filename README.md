@@ -107,3 +107,9 @@ This adds a new source-file prefix to the already verified Iceberg Bronze table,
 ## Fresh Snowpipe trade-event test file (prepared)
 
 A six-row synthetic `trade_events_snowpipe_20261111_001.parquet` was generated and shared in the conversation for upload; client/account/instrument references reuse starter synthetic data. The user can reproduce an equivalent file with [scripts/generate_snowpipe_trade_events.py](scripts/generate_snowpipe_trade_events.py). Test SQL: [sql/snowpipe/10_verify_generated_trade_events.sql](sql/snowpipe/10_verify_generated_trade_events.sql). Five new trade inserts plus one price update will test both current Gold and historical SCD2. **Not yet uploaded/verified in Snowflake**; don't claim full pipeline complete.
+
+## Complete interview revision — 12 Nov 2026
+
+[Read the full AWS IAM → Gold CDC/SCD2 revision guide](docs/full_pipeline_revision_aws_to_scd2.md) and its [Notion revision page](https://app.notion.com/p/4167b5a3502e8129ad17d6f7e7c3d13d). Covers every configured layer: source S3 bucket, least-privilege read-role permission/trust policies and storage integration, stage/Parquet format, historical RAW COPY, second Iceberg write-role/external volume, Iceberg CTAS/time scale, Parquet FULL_INGEST, dbt DQ, S3 event/SQS Snowpipe, independent streams/tasks, latest-state CDC and transactional physical SCD2, real troubleshooting cases, monitoring and **25 concise interview questions**.
+
+Latest user confirmation: physical SCD2 record is now appearing. Exact Snowpipe six-event end-to-end counts/task-history were not pasted, and implementation of permanent file/event idempotency remains deferred. The guide distinguishes these execution-evidence levels.
