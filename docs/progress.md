@@ -370,3 +370,11 @@ ORDER BY VERSION_NO;
 SELECT SYSTEM$STREAM_HAS_DATA('IB_LAB.BRONZE.TRADE_EVENTS_SCD2_STREAM');
 ```
 If valid and desired both show two versions and stream has data, safely resume the existing SCD2 Task (only if suspended), then check TASK_HISTORY/SCD2 apply audit. If stream has no pending data, resume alone cannot recover historic changes: inspect SCD2 bootstrap/backfill and stream creation order, apply a targeted guarded backfill if appropriate. No unverified success claim. Idempotency deliberately deferred.
+
+## 2026-11-12 — Full pipeline revision package saved
+
+**User update:** Physical SCD2 history test record is **now present** (reported by user after previous 0-row result). Do not assume specific count, history versions or task state without pasted proof. User requests complete stepwise revision of full pipeline including **all AWS IAM role registration details** and small technical points. **No need for additional troubleshooting of that 0-row SCD2 sample unless a new failure appears.**
+
+**Artifacts:** [Complete revision guide](docs/full_pipeline_revision_aws_to_scd2.md) in GitHub, and [full Notion interview revision page](https://app.notion.com/p/4167b5a3502e8129ad17d6f7e7c3d13d). Both cover source READ role via STORAGE INTEGRATION vs Iceberg WRITE role via EXTERNAL VOLUME, AWS trust Principal+sts:ExternalId, policy details, S3 prefixes, stage/formats, RAW counts, Iceberg 9-to-6 timestamp correction, Parquet, dbt/DQ, Snowpipe S3/SQS, two independent streams/tasks, CDC and SCD2, monitoring, real issues, 25 Q&A and five verbal mock questions.
+
+**Execution-evidence status:** 1704 RAW and Iceberg history verified, 392 Parquet batch verified, 403 wrong-domain settlement rows rejected verified, prior Gold current-state CDC smoke test verified, Snowpipe configured/executed and SCD2 record appearance now user-confirmed, but the exact final six-event, five-trade/2-version readouts have not been pasted. The GitHub dbt models remain reconstructions, not complete authoritative workspace export. Event-level idempotency remains future work per user.
