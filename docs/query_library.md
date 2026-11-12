@@ -55,3 +55,7 @@ Keep trade-event mapping, upload genuine `trade_events_*.parquet` to auto-prefix
 - Generator: [scripts/generate_snowpipe_trade_events.py](../scripts/generate_snowpipe_trade_events.py), produces `trade_events_snowpipe_20261111_001.parquet` with six business events (five inserts, one update).
 - Single validation script: [sql/snowpipe/10_verify_generated_trade_events.sql](../sql/snowpipe/10_verify_generated_trade_events.sql), targeted Iceberg/dbt/Gold/SCD2 evidence.
 - Status: locally generated and structurally validated, **not yet uploaded or verified in Snowflake**. The November 5 source files were settlements, not trade-events.
+
+## Complete architecture and IAM revision (12 Nov 2026)
+
+[Full pipeline revision, AWS IAM → SCD2](docs/full_pipeline_revision_aws_to_scd2.md) · [Notion study page](https://app.notion.com/p/4167b5a3502e8129ad17d6f7e7c3d13d). Includes IAM role and permission policy vs trust policy, DESC INTEGRATION/DESC EXTERNAL VOLUME IAM principal+External ID handshake, separate source READ and Iceberg WRITE, early AssumeRole-denied error, Iceberg v2 TIMESTAMP_LTZ(6) fix, Snowpipe S3 notification/SQS/auto prefix, DQ settlement cross-domain incident, stream offsets, physical SCD2 transactional rebuild, monitoring and 25 one-line interview answers.
