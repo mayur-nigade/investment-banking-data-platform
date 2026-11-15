@@ -59,3 +59,7 @@ Keep trade-event mapping, upload genuine `trade_events_*.parquet` to auto-prefix
 ## Complete architecture and IAM revision (12 Nov 2026)
 
 [Full pipeline revision, AWS IAM → SCD2](docs/full_pipeline_revision_aws_to_scd2.md) · [Notion study page](https://app.notion.com/p/4167b5a3502e8129ad17d6f7e7c3d13d). Includes IAM role and permission policy vs trust policy, DESC INTEGRATION/DESC EXTERNAL VOLUME IAM principal+External ID handshake, separate source READ and Iceberg WRITE, early AssumeRole-denied error, Iceberg v2 TIMESTAMP_LTZ(6) fix, Snowpipe S3 notification/SQS/auto prefix, DQ settlement cross-domain incident, stream offsets, physical SCD2 transactional rebuild, monitoring and 25 one-line interview answers.
+
+## Enterprise Snowflake-first banking reference architecture (15 Nov 2026)
+
+[Deep architecture — DMS/S3/Lambda Snowflake CONTROL ledger/Iceberg/dbt/Gold](docs/snowflake_first_banking_platform_reference_architecture.md) · [Notion reading page](https://app.notion.com/p/4197b5a3502e815bb417cdc5fe079fb6). Comparison with original migration-guide pattern, our hands-on lab, and proposed cloud design; layer-by-layer definitions and triggers, actual IAM roles/permissions, source CDC vs file vs Gold watermarks, file-success state machine, Lambda vs Snowpipe separation, no Glue, no mandatory DynamoDB, failure/recovery, and production gaps.
